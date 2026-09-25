@@ -37,6 +37,7 @@ export default async function product(main, { params, navigate }) {
         ${p.rating_count ? html`<a href="#reviews" class="stars" data-tab-link="reviews">${stars(p.rating_avg)} <span class="muted small">${num(p.rating_avg.toFixed(1))} · ${num(p.rating_count)} ${t("reviews")}</span></a>` : ""}
         <h1>${name}</h1>
         <div class="pdp-price" id="price"></div>
+        <div class="pdp-offer">${p.delivery_mode === "free" ? html`<span>🚚 ${t("freeDelivery")}</span>` : p.delivery_mode === "fixed" ? html`<span>🚚 ${t("deliveryCharge")}: ${money(p.delivery_charge ?? 0)}</span>` : ""}${p.sku ? html`<span class="muted small">SKU: ${p.sku}</span>` : ""}</div>
         <div class="opt-label"><span>${t("selectColour")}: <span class="muted" id="colour-name">${sel.color ?? ""}</span></span></div>
         <div class="colour-opts" role="radiogroup" aria-label="${t("selectColour")}">${colours.map(([c, hex]) => html`<button type="button" role="radio" data-color="${c}" aria-pressed="${sel.color === c}" aria-checked="${sel.color === c}" aria-label="${c}" title="${c}"><span style="background:${hex || "#ccc"}"></span></button>`)}</div>
         <div class="opt-label"><span>${t("selectSize")}</span><button type="button" id="size-guide">${icon("ruler", "icon")} ${t("sizeGuide")}</button></div>

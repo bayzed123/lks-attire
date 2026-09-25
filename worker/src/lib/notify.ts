@@ -13,6 +13,7 @@ type Templates = Record<TemplateKey, { en: string; bn: string }>;
 export interface NotifyOrder {
   id: number;
   order_no: string;
+  invoice_no?: string | null;
   customer_name: string;
   customer_phone: string;
   customer_email: string | null;
@@ -108,6 +109,7 @@ export async function notifyOrder(env: Env, order: NotifyOrder, key: TemplateKey
   const message = render(tpl[lang], {
     name: order.customer_name.split(" ")[0],
     order_no: order.order_no,
+    invoice_no: order.invoice_no ?? order.order_no,
     total: order.total,
     courier: order.courier_partner ?? "",
     tracking: order.tracking_id ?? "",

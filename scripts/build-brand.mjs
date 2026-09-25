@@ -216,7 +216,7 @@ const settings = {
   },
   notifications: { sms: true, whatsapp: false, email: true, ownerPhone: brand.contact.phone },
   sms_templates: {
-    placed: { en: "Hi {name}, your order {order_no} (৳{total}) is received. We will call to confirm. - {store}", bn: "প্রিয় {name}, আপনার অর্ডার {order_no} (৳{total}) পেয়েছি। কনফার্ম করতে আমরা কল করব। - {store}" },
+    placed: { en: "Hi {name}, your order {order_no} (Invoice {invoice_no}, ৳{total}) is received. We will call to confirm. - {store}", bn: "প্রিয় {name}, আপনার অর্ডার {order_no} (ইনভয়েস {invoice_no}, ৳{total}) পেয়েছি। কনফার্ম করতে আমরা কল করব। - {store}" },
     confirmed: { en: "Order {order_no} is confirmed. Thank you! - {store}", bn: "অর্ডার {order_no} কনফার্ম হয়েছে। ধন্যবাদ! - {store}" },
     packed: { en: "Order {order_no} is packed and ready to ship. - {store}", bn: "অর্ডার {order_no} প্যাক করা হয়েছে। - {store}" },
     shipped: { en: "Order {order_no} shipped via {courier}. Tracking: {tracking}. - {store}", bn: "অর্ডার {order_no} {courier} দিয়ে পাঠানো হয়েছে। ট্র্যাকিং: {tracking}। - {store}" },

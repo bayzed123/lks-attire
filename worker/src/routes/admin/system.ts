@@ -209,10 +209,27 @@ app.get("/search", perm("dashboard.view"), async (c) => {
   const term = (c.req.query("q") ?? "").trim();
   if (term.length < 2) return c.json({ orders: [], products: [], customers: [] });
   const like = `%${term.replace(/[%_]/g, "")}%`;
+  // Phone numbers are stored as 01XXXXXXXXX; also match when staff type +880 / 880.
+  const digits = term.replace(/\D/g, "");
+  const phone = digits.length >= 5 ? `%${digits.replace(/^(?:00)?880/, "0")}%` : like;
   const [orders, products, customers] = await Promise.all([
-    c.env.DB.prepare("SELECT id, order_no, customer_name, total, status FROM orders WHERE deleted_at IS NULL AND (order_no LIKE ? OR customer_phone LIKE ? OR customer_name LIKE ?) ORDER BY id DESC LIMIT 5").bind(like, like, like).all(),
-    c.env.DB.prepare("SELECT id, name_en, name_bn, slug, price FROM products WHERE deleted_at IS NULL AND (name_en LIKE ? OR name_bn LIKE ? OR sku LIKE ?) LIMIT 5").bind(like, like, like).all(),
-    c.env.DB.prepare("SELECT id, name, phone FROM customers WHERE deleted_at IS NULL AND (name LIKE ? OR phone LIKE ?) LIMIT 5").bind(like, like).all(),
+    c.env.DB.prepare(
+      `SELECT o.id, o.order_no, o.invoice_no, o.customer_name, o.customer_phone, o.total, o.status, o.created_at FROM orders o
+        WHERE o.deleted_at IS NULL AND (o.order_no LIKE ? OR o.invoice_no LIKE ? OR o.customer_phone LIKE ? OR o.customer_name LIKE ? OR o.customer_email LIKE ?
+          OR o.payment_ref LIKE ? OR o.tracking_id LIKE ? OR EXISTS (SELECT 1 FROM order_items i WHERE i.order_id = o.id AND i.sku LIKE ?))
+        ORDER BY o.id DESC LIMIT 8`,
+    ).bind(like, like, phone, like, like, like, like, like).all(),
+    c.env.DB.prepare(
+      `SELECT p.id, p.name_en, p.name_bn, p.slug, p.sku, p.price, p.sale_price,
+              (SELECT v.sku FROM product_variants v WHERE v.product_id = p.id AND v.sku LIKE ? LIMIT 1) AS variant_sku
+         FROM products p WHERE p.deleted_at IS NULL AND (p.name_en LIKE ? OR p.name_bn LIKE ? OR p.sku LIKE ? OR EXISTS (SELECT 1 FROM product_variants v WHERE v.product_id = p.id AND v.sku LIKE ?)) LIMIT 6`,
+    ).bind(like, like, like, like, like).all(),
+    c.env.DB.prepare(
+      `SELECT c.id, c.name, c.phone, c.email,
+              (SELECT COUNT(*) FROM orders o WHERE o.customer_phone = c.phone AND o.deleted_at IS NULL) AS order_count
+         FROM customers c WHERE c.deleted_at IS NULL AND (c.name LIKE ? OR c.phone LIKE ? OR c.email LIKE ?
+           OR c.phone IN (SELECT customer_phone FROM orders WHERE invoice_no LIKE ? OR order_no LIKE ?)) LIMIT 6`,
+    ).bind(like, phone, like, like, like).all(),
   ]);
   return c.json({ orders: orders.results, products: products.results, customers: customers.results });
 });

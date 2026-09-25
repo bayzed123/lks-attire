@@ -17,7 +17,7 @@ export default async function orders(view, { id, query, refreshBell }) {
     <div class="chips" id="tabs" style="margin-bottom:18px"></div>
     <div class="card">
       <div class="toolbar">
-        <label class="sr-only" for="oq">${t("searchPlaceholder")}</label><input class="input" id="oq" type="search" placeholder="${lang() === "bn" ? "অর্ডার নম্বর, নাম, ফোন, ট্র্যাকিং…" : "Order no, name, phone, tracking…"}">
+        <label class="sr-only" for="oq">${t("searchPlaceholder")}</label><input class="input" id="oq" type="search" placeholder="${lang() === "bn" ? "ইনভয়েস/অর্ডার নং, নাম, ফোন, TrxID, SKU…" : "Invoice/order no, name, phone, TrxID, SKU…"}">
         <select class="input" id="opm" aria-label="${t("payment")}"><option value="">${t("payment")}: ${t("all")}</option>${["COD", "bKash", "Nagad", "Rocket", "Card"].map((m) => html`<option>${m}</option>`)}</select>
         <input class="input" type="date" id="ofrom" aria-label="${lang() === "bn" ? "শুরুর তারিখ" : "From date"}" style="flex:0 1 160px">
         <input class="input" type="date" id="oto" aria-label="${lang() === "bn" ? "শেষ তারিখ" : "To date"}" style="flex:0 1 160px">
@@ -30,7 +30,7 @@ export default async function orders(view, { id, query, refreshBell }) {
   const table = listTable($("#list", view), {
     columns: [
       { label: { en: "", bn: "" }, render: (o) => raw(`<input type="checkbox" data-sel="${o.id}" aria-label="select" ${selected.has(o.id) ? "checked" : ""} style="width:22px;height:22px">`) },
-      { label: { en: "Order", bn: "অর্ডার" }, render: (o) => html`<b>${o.order_no}</b><br><span class="muted small">${dt(o.created_at, true)}</span>` },
+      { label: { en: "Order", bn: "অর্ডার" }, render: (o) => html`<b>${o.invoice_no ?? o.order_no}</b><br><span class="muted small">${o.order_no} · ${dt(o.created_at, true)}</span>` },
       { label: { en: "Customer", bn: "গ্রাহক" }, render: (o) => html`${o.customer_name}<br><a href="tel:${o.customer_phone}" class="small">${o.customer_phone}</a>` },
       { label: { en: "Area", bn: "এলাকা" }, render: (o) => html`${o.upazila}, ${o.district}` },
       { label: { en: "Total", bn: "মোট" }, render: (o) => html`<b>${money(o.total)}</b><br><span class="muted small">${num(o.item_count)} ${t("items")}</span>` },
@@ -93,13 +93,13 @@ async function openOrder(id, onChange) {
 
   const { panel, close, body } = slideOver({
     wide: true,
-    title: `${t("orderDetail")} ${o.order_no}`,
+    title: `${t("orderDetail")} ${o.invoice_no ?? o.order_no}`,
     body: html`
       <div class="pipeline">${FLOW.map((s, i) => html`<span class="${i <= reachedIdx ? "done" : ""}">${t(`s_${s}`)}</span>`)}${bad ? html`<span class="bad">${t(`s_${o.status}`)}</span>` : ""}</div>
       ${canUpdate && d.nextStatuses.length && !o.deleted_at ? html`<div class="chips" style="margin-bottom:18px">${d.nextStatuses.map((s) => html`<button class="btn ${["cancelled", "returned"].includes(s) ? "" : "primary"}" data-next="${s}">${["cancelled", "returned"].includes(s) ? "" : "→ "}${t(`s_${s}`)}</button>`)}</div>` : ""}
       <div class="grid2">
         <div class="card"><h3>${t("customer")}</h3>
-          <dl class="kv"><dt>${lang() === "bn" ? "নাম" : "Name"}</dt><dd>${o.customer_name}</dd><dt>${t("phone")}</dt><dd><a href="tel:${o.customer_phone}">${o.customer_phone}</a></dd>${o.customer_email ? html`<dt>Email</dt><dd>${o.customer_email}</dd>` : ""}
+          <dl class="kv"><dt>${t("invoiceNo")}</dt><dd><b>${o.invoice_no ?? "—"}</b></dd><dt>${t("orderNo")}</dt><dd>${o.order_no}</dd><dt>${lang() === "bn" ? "নাম" : "Name"}</dt><dd>${o.customer_name}</dd><dt>${t("phone")}</dt><dd><a href="tel:${o.customer_phone}">${o.customer_phone}</a></dd>${o.customer_email ? html`<dt>Email</dt><dd>${o.customer_email}</dd>` : ""}
           <dt>${t("deliverTo")}</dt><dd>${o.area}, ${o.upazila}, ${o.district}, ${o.division}</dd><dt>Zone</dt><dd>${o.zone_code}</dd></dl>
           ${d.customerStats ? html`<p class="small ${risk ? "error-box" : "muted"}" style="margin-top:10px">${t("customerHistory", { n: num(d.customerStats.orders), f: num(d.customerStats.failed ?? 0) })}</p>` : ""}
           <div class="chips" style="margin-top:10px"><a class="btn sm" href="tel:${o.customer_phone}">${icon("phone")} ${lang() === "bn" ? "কল" : "Call"}</a><a class="btn sm" target="_blank" rel="noopener" href="https://wa.me/88${o.customer_phone}?text=${waText}">WhatsApp</a></div>
@@ -116,7 +116,7 @@ async function openOrder(id, onChange) {
         </div>
       </div>
       <div class="card"><h3>${t("items")}</h3>
-        ${d.items.map((i) => html`<div class="item-row">${i.image ? html`<img class="thumb" src="${i.image}" alt="">` : html`<span></span>`}<span><b>${lang() === "bn" ? i.name_bn : i.name_en}</b><br><span class="muted small">${i.size} · ${i.color} · ${num(i.quantity)} × ${money(i.unit_price)}</span></span><b>${money(i.line_total)}</b></div>`)}
+        ${d.items.map((i) => html`<div class="item-row">${i.image ? html`<img class="thumb" src="${i.image}" alt="">` : html`<span></span>`}<span><b>${lang() === "bn" ? i.name_bn : i.name_en}</b><br><span class="muted small">${i.sku ? html`SKU ${i.sku} · ` : ""}${i.size} · ${i.color} · ${num(i.quantity)} × ${money(i.unit_price)}</span></span><b>${money(i.line_total)}</b></div>`)}
         <dl class="kv" style="margin-top:10px;justify-content:end"><dt>${t("subtotal")}</dt><dd>${money(o.subtotal)}</dd>${o.discount ? html`<dt>${t("discount")} (${o.coupon_code})</dt><dd>−${money(o.discount)}</dd>` : ""}<dt>${t("deliveryFee")}</dt><dd>${money(o.delivery_fee)}</dd><dt><b>${t("total")}</b></dt><dd style="font-size:1.2rem">${money(o.total)}</dd></dl>
       </div>
       <div class="card"><h3>${t("adminNotes")}</h3><form id="notes"><textarea class="input" name="admin_notes" ${canUpdate ? "" : raw("disabled")}>${o.admin_notes ?? ""}</textarea>${canUpdate ? html`<button class="btn sm" style="margin-top:10px">${t("save")}</button>` : ""}</form></div>
@@ -208,10 +208,10 @@ function invoiceHtml(d) {
   const b = brand;
   return html`<div class="invoice">
     <div style="display:flex;justify-content:space-between;gap:20px"><div><h1 style="margin:0">${b.name.en}</h1><div>${b.location?.street?.en ?? ""}, ${b.location?.city?.en ?? ""}, Bangladesh</div><div>${b.contact?.phone ?? ""} · ${b.contact?.email ?? ""}</div></div>
-      <div style="text-align:right"><h2 style="margin:0">INVOICE</h2><div><b>${o.order_no}</b></div><div>${new Date(o.created_at).toLocaleDateString("en-GB")}</div></div></div>
+      <div style="text-align:right"><h2 style="margin:0">INVOICE</h2><div><b>${o.invoice_no ?? o.order_no}</b></div><div>Order: ${o.order_no}</div><div>${new Date(o.created_at).toLocaleDateString("en-GB")}</div></div></div>
     <p style="margin-top:18px"><b>Bill / Ship to:</b><br>${o.customer_name} · ${o.customer_phone}<br>${o.area}, ${o.upazila}, ${o.district}, ${o.division}</p>
-    <table><thead><tr><th>Item</th><th>Size</th><th>Colour</th><th class="right">Qty</th><th class="right">Price</th><th class="right">Total</th></tr></thead>
-      <tbody>${d.items.map((i) => html`<tr><td>${i.name_en}<br><small>${i.name_bn}</small></td><td>${i.size}</td><td>${i.color}</td><td class="right">${i.quantity}</td><td class="right">৳${i.unit_price}</td><td class="right">৳${i.line_total}</td></tr>`)}</tbody></table>
+    <table><thead><tr><th>Item</th><th>SKU</th><th>Size</th><th>Colour</th><th class="right">Qty</th><th class="right">Price</th><th class="right">Total</th></tr></thead>
+      <tbody>${d.items.map((i) => html`<tr><td>${i.name_en}<br><small>${i.name_bn}</small></td><td>${i.sku ?? ""}</td><td>${i.size}</td><td>${i.color}</td><td class="right">${i.quantity}</td><td class="right">৳${i.unit_price}</td><td class="right">৳${i.line_total}</td></tr>`)}</tbody></table>
     <table style="width:280px;margin-left:auto"><tr><td>Subtotal</td><td class="right">৳${o.subtotal}</td></tr>${o.discount ? html`<tr><td>Discount (${o.coupon_code})</td><td class="right">−৳${o.discount}</td></tr>` : ""}<tr><td>Delivery</td><td class="right">৳${o.delivery_fee}</td></tr><tr><td><b>Total</b></td><td class="right"><b>৳${o.total}</b></td></tr>
       <tr><td>Payment</td><td class="right">${o.payment_method} (${o.payment_status})</td></tr>${o.payment_method === "COD" && o.payment_status !== "paid" ? html`<tr><td><b>Collect (COD)</b></td><td class="right"><b>৳${o.total}</b></td></tr>` : ""}</table>
     <p style="margin-top:30px;font-size:12px">Thank you for shopping with ${b.name.en}! Exchange within 3 days of delivery with tags attached. · ধন্যবাদ!</p></div>`;
@@ -222,6 +222,6 @@ function labelHtml(d) {
   const cod = o.payment_status === "paid" ? 0 : o.total;
   return html`<div class="ship-label"><div style="display:flex;justify-content:space-between"><b>${brand.name.en}</b><span>${o.courier_partner ?? ""} ${o.tracking_id ?? ""}</span></div>
     <hr><div class="big">${o.customer_name}</div><div class="big">${o.customer_phone}</div><div style="margin:6px 0">${o.area}<br>${o.upazila}, ${o.district}</div>
-    <hr><div style="display:flex;justify-content:space-between"><span>${o.order_no}</span><span class="big">COD ৳${cod}</span></div>
+    <hr><div style="display:flex;justify-content:space-between"><span>${o.invoice_no ?? o.order_no}</span><span class="big">COD ৳${cod}</span></div>
     <div style="font-size:11px;margin-top:6px">From: ${brand.name.en}, ${brand.location?.street?.en ?? ""}, ${brand.location?.city?.en ?? ""} · ${brand.contact?.phone ?? ""}</div></div>`;
 }
