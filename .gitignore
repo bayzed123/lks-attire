@@ -1,0 +1,12 @@
+node_modules/
+dist/
+dist-seed/
+.wrangler/
+.dev.vars
+.env
+worker/src/brand.generated.ts
+test-results/
+playwright-report/
+coverage/
+*.log
+.DS_Store

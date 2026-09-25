@@ -1,0 +1,48 @@
+# Lk's Attire — one Worker serves the storefront, the admin dashboard and the API.
+# Replace the database_id / KV id placeholders with the values printed by
+# `wrangler d1 create lks-attire-db` and `wrangler kv namespace create KV` (see docs/SETUP.md).
+
+name = "lks-attire"
+main = "worker/src/index.ts"
+compatibility_date = "2026-08-15"
+compatibility_flags = ["nodejs_compat"]
+
+[assets]
+directory = "./dist"
+binding = "ASSETS"
+not_found_handling = "single-page-application"
+# The Worker runs first only for dynamic routes; everything else is served straight from the edge cache.
+run_worker_first = ["/api/*", "/media/*", "/sitemap.xml", "/product/*", "/shop/*"]
+
+[vars]
+ENVIRONMENT = "production"
+PUBLIC_URL = ""   # set to https://your-domain once a custom domain is live (CI variable PUBLIC_URL overrides this)
+
+[[d1_databases]]
+binding = "DB"
+database_name = "lks-attire-db"
+database_id = "00000000-0000-0000-0000-000000000000"
+migrations_dir = "worker/migrations"
+
+[[kv_namespaces]]
+binding = "KV"
+id = "00000000000000000000000000000000"
+
+[[r2_buckets]]
+binding = "MEDIA"
+bucket_name = "lks-attire-media"
+
+# Optional (Phase 3): Workers AI for bilingual product-description drafts.
+# [ai]
+# binding = "AI"
+
+[observability]
+enabled = true
+
+# Custom domain — uncomment after the zone is on Cloudflare DNS.
+# routes = [
+#   { pattern = "lksattire.com", custom_domain = true },
+#   { pattern = "www.lksattire.com", custom_domain = true }
+# ]
+
+# Local development overrides ENVIRONMENT / PUBLIC_URL and secrets through .dev.vars (git-ignored).

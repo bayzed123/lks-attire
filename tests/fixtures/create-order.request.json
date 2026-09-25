@@ -1,0 +1,16 @@
+{
+  "customer": { "name": "Nusrat Jahan", "phone": "01711223344", "email": "" },
+  "address": {
+    "division_id": 6,
+    "district_id": 44,
+    "upazila_id": 342,
+    "division": "Dhaka",
+    "district": "Tangail",
+    "upazila": "Tangail Sadar",
+    "area": "Akurtakur Para, Road 3, House 12"
+  },
+  "items": [{ "variantId": 1, "quantity": 2 }],
+  "paymentMethod": "COD",
+  "note": "Please call before delivery",
+  "lang": "bn"
+}
