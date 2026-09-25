@@ -85,8 +85,11 @@ export const loginSchema = z.object({
   turnstileToken: z.string().optional(),
 });
 
+/** Staff sign-in ID: an email address or a simple username (letters, digits, . _ - @). */
+export const adminLoginId = z.string().trim().toLowerCase().min(3).max(120).regex(/^[a-z0-9._@+-]+$/, "Use letters, numbers, dot, dash or underscore");
+
 export const adminLoginSchema = z.object({
-  email: z.email(),
+  email: adminLoginId,
   password: z.string().min(1).max(128),
   turnstileToken: z.string().optional(),
 });
@@ -241,7 +244,7 @@ export const zoneSchema = z.object({
 
 export const staffSchema = z.object({
   name: reqText(80),
-  email: z.email(),
+  email: adminLoginId,
   phone: optText(20),
   role: z.enum(["super_admin", "manager", "order_processor", "viewer"]),
   is_active: flag.default(1),

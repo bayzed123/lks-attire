@@ -653,7 +653,7 @@ lks-attire/
 6. `cp .dev.vars.example .dev.vars` for local secrets. For production: `npx wrangler secret put SMS_API_KEY` and so on.
 7. `npm run db:migrate:local && npm run db:seed:local && npm run dev`.
 8. First admin: `node scripts/create-admin.mjs "Owner" owner@… 'long-password' > admin.sql && npx wrangler d1 execute DB --remote --file=admin.sql && rm admin.sql`, or use the one-time `BOOTSTRAP_TOKEN` endpoint.
-9. **GitHub:** `main` = production. Feature branches go through pull requests, and CI must pass. Add secrets `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`, plus `ADMIN_EMAIL`/`ADMIN_PASSWORD` for the first admin. Optional variables: `WORKER_NAME`, `PUBLIC_URL`, `BRAND`. Full list: `docs/GITHUB-SECRETS.md`.
+9. **GitHub:** `main` = production. Feature branches go through pull requests, and CI must pass. Add secrets `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`, plus `ADMIN_USERNAME`/`ADMIN_PASSWORD` for the first admin. Optional variables: `WORKER_NAME`, `PUBLIC_URL`, `BRAND`. Full list: `docs/GITHUB-SECRETS.md`.
 10. **Domain:** add `lksattire.com` to Cloudflare DNS, then uncomment the `routes` custom-domain block in `wrangler.toml`. Cloudflare issues the certificate automatically.
 
 The workflow (`.github/workflows/ci-deploy.yml`) runs **build → typecheck → unit/integration → E2E** on every push/PR. On `main` it then runs **D1 migrations → `wrangler deploy` → smoke test**.

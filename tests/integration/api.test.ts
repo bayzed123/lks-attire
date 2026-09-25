@@ -118,6 +118,15 @@ describe("admin", () => {
     expect(res.status).toBe(401);
     expect(data.bn).toBeTruthy();
   });
+  it("lets staff sign in with a plain username (case-insensitive)", async () => {
+    const created = await call("/api/admin/staff", { method: "POST", cookie: adminCookie, json: { name: "Shop Owner", email: "LksAdmin", role: "viewer", is_active: 1, password: "Username-Login-1" } });
+    expect(created.res.status).toBe(201);
+    const { res, data } = await call("/api/admin/auth/login", { method: "POST", json: { email: "lksadmin", password: "Username-Login-1" } });
+    expect(res.status).toBe(200);
+    expect(data.admin.email).toBe("lksadmin");
+    const bad = await call("/api/admin/staff", { method: "POST", cookie: adminCookie, json: { name: "X", email: "has space", role: "viewer", is_active: 1, password: "Username-Login-1" } });
+    expect(bad.res.status).toBe(422);
+  });
   it("shows dashboard KPIs", async () => {
     const { res, data } = await call("/api/admin/dashboard", { cookie: adminCookie });
     expect(res.status).toBe(200);

@@ -70,7 +70,7 @@ function loginScreen(error) {
   document.title = `${t("signInTitle")} — ${brand.name.en}`;
   $("#root").innerHTML = String(html`<div class="login-wrap"><form class="card login-card" id="login" novalidate>
     <div class="brand" style="padding:0 0 18px"><span class="brand-mark">${brand.logo.image ? html`<img src="${brand.logo.image}" alt="" style="width:100%;height:100%;border-radius:14px;object-fit:cover">` : brand.logo.monogram}</span><span><b>${brand.name[lang()] ?? brand.name.en}</b><small class="muted">${t("signInTitle")}</small></span></div>
-    <label class="field"><span>${t("email")}</span><input class="input" name="email" type="email" autocomplete="username" required></label>
+    <label class="field"><span>${t("loginId")}</span><input class="input" name="email" type="text" autocapitalize="none" autocorrect="off" spellcheck="false" autocomplete="username" required></label>
     <label class="field"><span>${t("password")}</span><input class="input" name="password" type="password" autocomplete="current-password" required></label>
     ${error ? html`<p class="error-box">${error}</p>` : ""}
     <button class="btn primary" style="width:100%">${t("signIn")}</button>

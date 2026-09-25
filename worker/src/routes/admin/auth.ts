@@ -4,7 +4,7 @@ import { deleteCookie, getCookie, setCookie } from "hono/cookie";
 import { z } from "zod";
 import type { AppEnv, Role } from "../../env";
 import { ApiError, body, clientIp, E } from "../../lib/http";
-import { adminLoginSchema } from "../../lib/schemas";
+import { adminLoginId, adminLoginSchema } from "../../lib/schemas";
 import { hashPassword, randomToken, safeEqualStr, verifyPassword } from "../../lib/crypto";
 import { ADMIN_COOKIE, ADMIN_TTL, audit, getSetting, rateLimit, verifyTurnstile } from "../../lib/store";
 import { ROLE_MATRIX } from "../../lib/rbac";
@@ -33,7 +33,7 @@ app.post("/login", async (c) => {
       const cfg = await getSetting<{ ownerPhone?: string }>(c.env, "notifications", {});
       if (cfg.ownerPhone) c.executionCtx.waitUntil(sendSms(c.env, cfg.ownerPhone, `Security alert: 5 failed admin sign-ins from IP ${clientIp(c)} (last tried: ${b.email}).`, "security"));
     }
-    throw new ApiError(401, "bad_credentials", "Email or password is incorrect.", "ইমেইল বা পাসওয়ার্ড সঠিক নয়।");
+    throw new ApiError(401, "bad_credentials", "Username/email or password is incorrect.", "ইউজারনেম/ইমেইল বা পাসওয়ার্ড সঠিক নয়।");
   }
   const token = randomToken();
   const session = { id: a.id, name: a.name, email: a.email, role: a.role };
@@ -75,7 +75,7 @@ app.put("/me", requireAdmin, async (c) => {
 /** Creates the first Super Admin. Works only while the admins table is empty and BOOTSTRAP_TOKEN matches. */
 app.post("/bootstrap", async (c) => {
   await rateLimit(c, "bootstrap", 5, 3600);
-  const b = await body(c, z.object({ token: z.string().min(16), name: z.string().trim().min(1).max(80), email: z.email(), password: z.string().min(10).max(128) }));
+  const b = await body(c, z.object({ token: z.string().min(16), name: z.string().trim().min(1).max(80), email: adminLoginId, password: z.string().min(10).max(128) }));
   if (!c.env.BOOTSTRAP_TOKEN || !safeEqualStr(b.token, c.env.BOOTSTRAP_TOKEN)) throw E.forbidden();
   const n = await c.env.DB.prepare("SELECT COUNT(*) AS n FROM admins").first<{ n: number }>();
   if ((n?.n ?? 0) > 0) throw E.conflict("An admin already exists. Sign in instead.", "অ্যাডমিন আগেই তৈরি করা আছে। সাইন ইন করুন।");

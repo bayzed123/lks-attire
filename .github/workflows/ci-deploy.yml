@@ -6,7 +6,7 @@
 #
 # REQUIRED repository secrets (Settings → Secrets and variables → Actions → Secrets):
 #   CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID
-# Recommended secrets (first deploy creates your Super Admin):  ADMIN_EMAIL, ADMIN_PASSWORD
+# Recommended secrets (first deploy creates your Super Admin):  ADMIN_USERNAME (or ADMIN_EMAIL), ADMIN_PASSWORD
 # Optional secrets (integrations) — see docs/GITHUB-SECRETS.md for the full list.
 # Optional variables: WORKER_NAME (default lks-attire), BRAND (default lks-attire), PALETTE, PUBLIC_URL
 name: CI & Deploy
@@ -80,6 +80,7 @@ jobs:
       - name: Provision Cloudflare (D1 + KV + R2), migrate, first-run seed & admin
         env:
           ADMIN_NAME: ${{ secrets.ADMIN_NAME }}
+          ADMIN_USERNAME: ${{ secrets.ADMIN_USERNAME }}
           ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
           ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
         run: node scripts/provision.mjs
