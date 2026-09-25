@@ -105,9 +105,12 @@ app.get("/", perm("orders.read"), async (c) => {
     args.push(q.to);
   }
   if (q.q) {
-    where.push("(o.order_no LIKE ? OR o.customer_name LIKE ? OR o.customer_phone LIKE ? OR o.tracking_id LIKE ?)");
+    // Anything that identifies a customer or order: invoice/order no, name, phone, email, TrxID, tracking, address or a SKU bought.
+    where.push(
+      "(o.order_no LIKE ? OR o.invoice_no LIKE ? OR o.customer_name LIKE ? OR o.customer_phone LIKE ? OR o.customer_email LIKE ? OR o.payment_ref LIKE ? OR o.tracking_id LIKE ? OR o.area LIKE ? OR EXISTS (SELECT 1 FROM order_items i WHERE i.order_id = o.id AND i.sku LIKE ?))",
+    );
     const like = `%${q.q.replace(/[%_]/g, "")}%`;
-    args.push(like, like, like, like);
+    args.push(like, like, like, like, like, like, like, like, like);
   }
   const limit = intParam(q.limit, 20, 1, 200);
   const page = intParam(q.page, 1, 1, 100000);
@@ -116,7 +119,7 @@ app.get("/", perm("orders.read"), async (c) => {
   const [count, rows, counts] = await Promise.all([
     c.env.DB.prepare(`SELECT COUNT(*) AS n FROM orders o WHERE ${w}`).bind(...args).first<{ n: number }>(),
     c.env.DB.prepare(
-      `SELECT o.id, o.order_no, o.customer_name, o.customer_phone, o.district, o.upazila, o.total, o.payment_method, o.payment_status,
+      `SELECT o.id, o.order_no, o.invoice_no, o.customer_name, o.customer_phone, o.district, o.upazila, o.total, o.payment_method, o.payment_status,
               o.status, o.courier_partner, o.tracking_id, o.created_at,
               (SELECT SUM(quantity) FROM order_items WHERE order_id = o.id) AS item_count
          FROM orders o WHERE ${w} ORDER BY ${sort} LIMIT ? OFFSET ?`,

@@ -73,7 +73,7 @@ const listQuery = z.object({
   ids: z.string().max(500).optional(),
 });
 
-export const PRODUCT_CARD_COLUMNS = `p.id, p.slug, p.name_en, p.name_bn, p.price, p.sale_price, p.images, p.rating_avg, p.rating_count, p.sold_count, p.is_featured, p.created_at, p.category_id,
+export const PRODUCT_CARD_COLUMNS = `p.id, p.slug, p.name_en, p.name_bn, p.price, p.sale_price, p.images, p.rating_avg, p.rating_count, p.sold_count, p.is_featured, p.created_at, p.category_id, p.delivery_mode, p.delivery_charge,
   (SELECT COALESCE(SUM(stock),0) FROM product_variants v WHERE v.product_id = p.id) AS stock,
   (SELECT GROUP_CONCAT(DISTINCT v.color_hex) FROM product_variants v WHERE v.product_id = p.id) AS color_hexes,
   (SELECT GROUP_CONCAT(DISTINCT v.size) FROM product_variants v WHERE v.product_id = p.id) AS sizes`;
@@ -312,17 +312,19 @@ app.post("/orders", optionalCustomer, async (c) => {
 app.get("/orders/track", async (c) => {
   await rateLimit(c, "track", 30, 300);
   const q = validate(z.object({ order: z.string().max(40), token: z.string().max(64).optional(), phone: z.string().max(20).optional() }), c.req.query());
-  const o = await c.env.DB.prepare("SELECT * FROM orders WHERE order_no = ? AND deleted_at IS NULL").bind(q.order.trim().toUpperCase()).first<OrderRow>();
+  const o = await c.env.DB.prepare("SELECT * FROM orders WHERE (order_no = ? OR invoice_no = ?) AND deleted_at IS NULL")
+    .bind(q.order.trim().toUpperCase(), q.order.trim().toUpperCase())
+    .first<OrderRow>();
   const phoneOk = q.phone && o && o.customer_phone === q.phone.replace(/[^\d]/g, "").replace(/^880/, "0");
   const tokenOk = q.token && o && o.public_token === q.token;
   if (!o || (!phoneOk && !tokenOk)) throw E.notFound("Order");
   const [items, history] = await Promise.all([
-    c.env.DB.prepare("SELECT name_en, name_bn, size, color, image, quantity, unit_price, line_total FROM order_items WHERE order_id = ?").bind(o.id).all(),
+    c.env.DB.prepare("SELECT name_en, name_bn, sku, size, color, image, quantity, unit_price, line_total FROM order_items WHERE order_id = ?").bind(o.id).all(),
     c.env.DB.prepare("SELECT status, created_at FROM order_status_history WHERE order_id = ? ORDER BY id").bind(o.id).all(),
   ]);
   return c.json({
     order: {
-      order_no: o.order_no, status: o.status, payment_method: o.payment_method, payment_status: o.payment_status,
+      order_no: o.order_no, invoice_no: o.invoice_no, status: o.status, payment_method: o.payment_method, payment_status: o.payment_status,
       subtotal: o.subtotal, discount: o.discount, delivery_fee: o.delivery_fee, total: o.total, coupon_code: o.coupon_code,
       customer_name: o.customer_name, customer_phone: o.customer_phone.replace(/^(\d{3})\d{5}/, "$1*****"),
       address: `${o.area}, ${o.upazila}, ${o.district}`, courier_partner: o.courier_partner, tracking_id: o.tracking_id,

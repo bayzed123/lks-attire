@@ -94,6 +94,11 @@ describe("checkout", () => {
     const track = await call(`/api/orders/track?order=${data.orderNo}&phone=${createOrderFixture.customer.phone}`);
     expect(track.data.order.status).toBe("pending");
     expect(track.data.order.delivery_fee).toBe(0); // Tangail town, over ৳3,000 → free
+    // Every order gets a unique invoice number, and each line keeps the SKU that was sold.
+    expect(track.data.order.invoice_no).toMatch(/^INV-\d{4}-\d{5}$/);
+    expect(track.data.items[0].sku).toBeTruthy();
+    const byInvoice = await call(`/api/orders/track?order=${track.data.order.invoice_no}&phone=${createOrderFixture.customer.phone}`);
+    expect(byInvoice.data.order.order_no).toBe(data.orderNo);
   });
   it("refuses to oversell", async () => {
     const { res, data } = await call("/api/orders", { method: "POST", json: { ...createOrderFixture, items: [{ variantId: createOrderFixture.items[0]!.variantId, quantity: 20 }] } });
@@ -172,6 +177,67 @@ describe("admin", () => {
     expect((await call(`/api/admin/products/${created.data.id}`, { method: "DELETE", cookie: adminCookie })).res.status).toBe(200);
     expect((await call("/api/products/test-kurti-rose")).res.status).toBe(404);
     expect((await call(`/api/admin/products/${created.data.id}/restore`, { method: "POST", cookie: adminCookie })).res.status).toBe(200);
+  });
+  it("auto-generates unique SKUs and rejects a duplicate SKU", async () => {
+    const body = {
+      slug: "sku-test-dress", name_en: "SKU Test Dress", name_bn: "এসকেইউ টেস্ট", category_id: 1, price: 1500, status: "active",
+      images: [], variants: [{ size: "M", color: "Deep Red", stock: 2 }, { size: "L", color: "Deep Red", sku: "my-own-sku", stock: 2 }],
+    };
+    const created = await call("/api/admin/products", { method: "POST", cookie: adminCookie, json: body });
+    expect(created.res.status).toBe(201);
+    const got = (await call(`/api/admin/products/${created.data.id}`, { cookie: adminCookie })).data.item;
+    expect(got.sku).toBe(`LKS-${String(created.data.id).padStart(4, "0")}`);
+    expect(got.variants.map((v: any) => v.sku).sort()).toEqual([`${got.sku}-M-DEEPRED`, "MY-OWN-SKU"].sort());
+    const clash = await call("/api/admin/products", { method: "POST", cookie: adminCookie, json: { ...body, slug: "sku-test-dress-2", sku: got.sku, variants: [{ size: "S", color: "Blue", stock: 1 }] } });
+    expect(clash.res.status).toBe(409);
+    expect(clash.data.fields[0].field).toBe("sku");
+    const copy = await call(`/api/admin/products/${created.data.id}/duplicate`, { method: "POST", cookie: adminCookie });
+    const copied = (await call(`/api/admin/products/${copy.data.id}`, { cookie: adminCookie })).data.item;
+    expect(copied.sku).not.toBe(got.sku);
+    expect(copied.variants.every((v: any) => v.sku && v.sku.startsWith(copied.sku))).toBe(true);
+  });
+  it("applies a product's % discount and free delivery at checkout", async () => {
+    const body = {
+      slug: "offer-test-saree", name_en: "Offer Saree", name_bn: "অফার শাড়ি", category_id: 1, price: 2000, status: "active", images: [],
+      discount_type: "percent", discount_value: 20, delivery_mode: "free", variants: [{ size: "Free Size", color: "Green", stock: 5 }],
+    };
+    const created = await call("/api/admin/products", { method: "POST", cookie: adminCookie, json: body });
+    expect(created.res.status).toBe(201);
+    const pub = await call("/api/products/offer-test-saree");
+    expect(pub.data.product.sale_price).toBe(1600);
+    expect(pub.data.product.discount_percent).toBe(20);
+    expect(pub.data.product.delivery_mode).toBe("free");
+    const variantId = pub.data.variants[0].id;
+    const dhaka = { ...createOrderFixture.address, division_id: 6, district_id: 47, upazila_id: 1, district: "Dhaka", upazila: "Dhanmondi" };
+    const q1 = await call("/api/cart/quote", { method: "POST", json: { items: [{ variantId, quantity: 1 }], address: dhaka } });
+    expect(q1.data.subtotal).toBe(1600);
+    expect(q1.data.deliveryFee).toBe(0);
+    // A normal product in the same cart brings the area fee back.
+    const cheap = await env.DB.prepare("SELECT v.id FROM product_variants v JOIN products p ON p.id = v.product_id WHERE p.status = 'active' AND p.delivery_mode = 'zone' AND p.price < 1500 AND v.stock > 0 LIMIT 1").first<{ id: number }>();
+    const q2 = await call("/api/cart/quote", { method: "POST", json: { items: [{ variantId, quantity: 1 }, { variantId: cheap!.id, quantity: 1 }], address: dhaka } });
+    expect(q2.data.deliveryFee).toBe(100);
+    // Switch to a fixed ৳40 charge and a flat ৳300 discount at any time.
+    const got = (await call(`/api/admin/products/${created.data.id}`, { cookie: adminCookie })).data.item;
+    const upd = await call(`/api/admin/products/${created.data.id}`, { method: "PUT", cookie: adminCookie, json: { ...body, discount_type: "flat", discount_value: 300, delivery_mode: "fixed", delivery_charge: 40, variants: got.variants } });
+    expect(upd.res.status).toBe(200);
+    const q3 = await call("/api/cart/quote", { method: "POST", json: { items: [{ variantId, quantity: 2 }], address: dhaka } });
+    expect(q3.data.subtotal).toBe(3400);
+    expect(q3.data.deliveryFee).toBe(40);
+    const bad = await call(`/api/admin/products/${created.data.id}`, { method: "PUT", cookie: adminCookie, json: { ...body, discount_value: 120, variants: got.variants } });
+    expect(bad.res.status).toBe(422);
+  });
+  it("finds a customer's orders by invoice no, phone or SKU in admin search", async () => {
+    const o = await env.DB.prepare("SELECT invoice_no, customer_phone FROM orders WHERE invoice_no IS NOT NULL ORDER BY id LIMIT 1").first<{ invoice_no: string; customer_phone: string }>();
+    const byInvoice = await call(`/api/admin/search?q=${o!.invoice_no}`, { cookie: adminCookie });
+    expect(byInvoice.data.orders[0].invoice_no).toBe(o!.invoice_no);
+    expect(byInvoice.data.customers.some((c: any) => c.phone === o!.customer_phone)).toBe(true);
+    const byPhone = await call(`/api/admin/search?q=${encodeURIComponent("+88" + o!.customer_phone)}`, { cookie: adminCookie });
+    expect(byPhone.data.orders.length).toBeGreaterThan(0);
+    const sku = await env.DB.prepare("SELECT sku FROM order_items WHERE sku IS NOT NULL LIMIT 1").first<{ sku: string }>();
+    const bySku = await call(`/api/admin/orders?q=${encodeURIComponent(sku!.sku)}`, { cookie: adminCookie });
+    expect(bySku.data.items.length).toBeGreaterThan(0);
+    const product = await call(`/api/admin/search?q=${encodeURIComponent(sku!.sku)}`, { cookie: adminCookie });
+    expect(product.data.products.length).toBeGreaterThan(0);
   });
   it("enforces role permissions on the server", async () => {
     const r = await call("/api/admin/products", { method: "POST", cookie: processorCookie, json: {} });

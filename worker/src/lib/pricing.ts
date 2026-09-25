@@ -33,6 +33,32 @@ export function deliveryFee(zone: Zone, merchandiseTotal: number): number {
   return zone.fee;
 }
 
+export type DeliveryMode = "zone" | "free" | "fixed";
+
+/**
+ * Delivery fee for a whole cart. Each product can use the area fee ("zone"), be delivered free, or have
+ * its own fixed charge. The cart pays the highest fee among its items, so it is free only when every
+ * item is free. Example: a free-delivery saree + an area-fee kurti to Dhaka → ৳100 (the Dhaka fee).
+ */
+export function cartDeliveryFee(zone: Zone, merchandiseTotal: number, items: { mode: DeliveryMode; charge: number | null }[]): number {
+  const areaFee = deliveryFee(zone, merchandiseTotal);
+  if (!items.length) return areaFee;
+  return Math.max(...items.map((i) => (i.mode === "free" ? 0 : i.mode === "fixed" ? (i.charge ?? 0) : areaFee)));
+}
+
+export type DiscountType = "none" | "percent" | "flat";
+
+/**
+ * Sale price from a product-level discount. "percent" and "flat" are calculated from the regular price;
+ * "none" keeps the sale price the admin typed (or no sale). Returns null when there is no real discount.
+ */
+export function salePriceFor(price: number, type: DiscountType, value: number, manualSale: number | null): number | null {
+  let sale: number | null = manualSale;
+  if (type === "percent") sale = Math.round((price * (100 - value)) / 100);
+  else if (type === "flat") sale = price - value;
+  return sale != null && sale > 0 && sale < price ? sale : null;
+}
+
 export function effectiveUnitPrice(product: { price: number; sale_price: number | null }, variant: { price_override: number | null }): number {
   if (variant.price_override != null && variant.price_override > 0) return variant.price_override;
   if (product.sale_price != null && product.sale_price > 0 && product.sale_price < product.price) return product.sale_price;

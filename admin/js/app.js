@@ -152,9 +152,11 @@ function renderRail() {
     if (q.length < 2) { box.innerHTML = ""; return; }
     try {
       const r = await api(`/search?q=${encodeURIComponent(q)}`);
-      box.innerHTML = String(html`${r.orders.map((o) => html`<a href="#/orders/${o.id}">🧾 ${o.order_no} · ${o.customer_name} · ${money(o.total)}</a>`)}
-        ${r.products.map((p) => html`<a href="#/products/${p.id}">👗 ${lang() === "bn" ? p.name_bn : p.name_en}</a>`)}
-        ${r.customers.map((c) => html`<a href="#/customers?id=${c.id}">👤 ${c.name} · ${c.phone}</a>`)}`);
+      const none = !r.orders.length && !r.products.length && !r.customers.length;
+      box.innerHTML = String(html`${r.orders.map((o) => html`<a href="#/orders/${o.id}">🧾 <b>${o.invoice_no ?? o.order_no}</b> · ${o.customer_name} · ${money(o.total)}<span class="sr-meta">${o.order_no} · ${o.customer_phone} · ${t(`s_${o.status}`)}</span></a>`)}
+        ${r.customers.map((c) => html`<a href="#/customers?id=${c.id}">👤 <b>${c.name}</b> · ${c.phone}<span class="sr-meta">${c.email ?? ""} ${num(c.order_count)} ${lang() === "bn" ? "অর্ডার" : "orders"}</span></a>`)}
+        ${r.products.map((p) => html`<a href="#/products/${p.id}">👗 ${lang() === "bn" ? p.name_bn : p.name_en} · ${money(p.sale_price ?? p.price)}<span class="sr-meta">SKU ${p.variant_sku ?? p.sku ?? "—"}</span></a>`)}
+        ${none ? html`<span class="muted small" style="padding:8px 12px;display:block">${lang() === "bn" ? "কিছু পাওয়া যায়নি" : "No matches"}</span>` : ""}`);
     } catch { box.innerHTML = ""; }
   }, 250);
   $("#gsearch").addEventListener("input", (e) => search(e.target.value.trim()));

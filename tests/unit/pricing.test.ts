@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { deliveryFee, discountPercent, effectiveUnitPrice, evaluateCoupon, resolveZone, type CouponRule, type Zone } from "../../worker/src/lib/pricing";
+import { cartDeliveryFee, deliveryFee, discountPercent, salePriceFor, effectiveUnitPrice, evaluateCoupon, resolveZone, type CouponRule, type Zone } from "../../worker/src/lib/pricing";
 
 const zones: Zone[] = [
   { code: "tangail_town", name_en: "Tangail town", name_bn: "", fee: 50, free_shipping_min: 3000, district_ids: [], upazila_ids: [342], is_default: 0 },
@@ -46,4 +46,21 @@ describe("evaluateCoupon", () => {
   it("rejects future coupons", () => expect(evaluateCoupon({ ...base, starts_at: "2999-01-01T00:00:00Z" }, lines)).toEqual({ ok: false, reason: "not_started" }));
   it("rejects used-up coupons", () => expect(evaluateCoupon({ ...base, usage_limit: 5, used_count: 5 }, lines)).toEqual({ ok: false, reason: "used_up" }));
   it("rejects inactive coupons", () => expect(evaluateCoupon({ ...base, is_active: 0 }, lines)).toEqual({ ok: false, reason: "inactive" }));
+});
+
+describe("cartDeliveryFee (per-product delivery)", () => {
+  const dhaka = zones[2]!;
+  it("uses the area fee for normal products", () => expect(cartDeliveryFee(dhaka, 1000, [{ mode: "zone", charge: null }])).toBe(100));
+  it("is free when every item has free delivery", () => expect(cartDeliveryFee(dhaka, 1000, [{ mode: "free", charge: null }, { mode: "free", charge: null }])).toBe(0));
+  it("charges the highest fee in a mixed cart", () => expect(cartDeliveryFee(dhaka, 1000, [{ mode: "free", charge: null }, { mode: "zone", charge: null }, { mode: "fixed", charge: 60 }])).toBe(100));
+  it("uses a product's fixed charge", () => expect(cartDeliveryFee(dhaka, 1000, [{ mode: "fixed", charge: 150 }, { mode: "free", charge: null }])).toBe(150));
+  it("still honours the zone's free-delivery minimum for area-fee items", () => expect(cartDeliveryFee(zones[0]!, 3000, [{ mode: "zone", charge: null }])).toBe(0));
+});
+
+describe("salePriceFor (product discounts)", () => {
+  it("calculates a percentage discount", () => expect(salePriceFor(2000, "percent", 15, null)).toBe(1700));
+  it("calculates a fixed taka discount", () => expect(salePriceFor(2000, "flat", 250, null)).toBe(1750));
+  it("keeps a typed sale price when there is no discount rule", () => expect(salePriceFor(2000, "none", 0, 1800)).toBe(1800));
+  it("drops a sale price that is not lower than the price", () => expect(salePriceFor(2000, "none", 0, 2000)).toBeNull());
+  it("never returns zero or less", () => expect(salePriceFor(500, "flat", 500, null)).toBeNull());
 });

@@ -354,12 +354,14 @@ erDiagram
 |---|---|---|
 | id | INTEGER PK | |
 | slug | TEXT UNIQUE | SEO URL |
-| sku | TEXT | |
+| sku | TEXT UNIQUE (case-insensitive) | blank → generated as `<PREFIX>-<id>`, e.g. `LKS-0042` |
 | name_en / name_bn | TEXT | |
 | description_en/bn, fabric_en/bn, care_en/bn | TEXT | |
 | category_id | FK → categories.id | |
 | price | INTEGER ≥ 0 | regular price ৳ |
-| sale_price | INTEGER NULL | shown with strikethrough when lower |
+| sale_price | INTEGER NULL | shown with strikethrough when lower; calculated from the discount below |
+| discount_type, discount_value | TEXT, INTEGER | `none` (typed sale price) · `percent` (1–95) · `flat` (৳ off) |
+| delivery_mode, delivery_charge | TEXT, INTEGER NULL | `zone` (area fee) · `free` · `fixed` (৳ charge) |
 | tags | TEXT | comma separated |
 | images | TEXT (JSON array) | R2 `/media/...` URLs, first = cover |
 | status | TEXT | `draft` · `active` · `archived` |
@@ -373,7 +375,7 @@ erDiagram
 |---|---|---|
 | id | INTEGER PK | |
 | product_id | FK → products.id (CASCADE) | |
-| sku | TEXT | |
+| sku | TEXT UNIQUE (case-insensitive) | blank → `<product SKU>-<SIZE>-<COLOUR>`, e.g. `LKS-0042-XL-RED` |
 | size / color | TEXT | UNIQUE(product_id, size, color) |
 | color_hex | TEXT | swatch |
 | stock | INTEGER **CHECK ≥ 0** | the CHECK makes overselling impossible, even under concurrency |
@@ -421,6 +423,7 @@ erDiagram
 |---|---|---|
 | id | INTEGER PK | |
 | order_no | TEXT UNIQUE | `LKS-YYMMDD-XXXX` (prefix from brand.json) |
+| invoice_no | TEXT UNIQUE | `INV-YYMM-<5-digit order id>`, e.g. `INV-2609-00042`; printed on the invoice and label, sent in SMS, accepted by order tracking |
 | public_token | TEXT | lets a guest view their own order |
 | customer_id | FK → customers.id NULL | |
 | customer_name / customer_phone / customer_email | TEXT | snapshot at order time |
@@ -440,7 +443,7 @@ erDiagram
 | deleted_at, created_at, updated_at | TEXT | |
 
 ### `order_items`
-`id`, `order_id` FK, `product_id` FK, `variant_id` FK, `category_id`, `name_en`, `name_bn`, `size`, `color`, `image`, `quantity` (>0), `unit_price`, `line_total`. This is a snapshot, so later product edits don't change past orders.
+`id`, `order_id` FK, `product_id` FK, `variant_id` FK, `category_id`, `sku`, `name_en`, `name_bn`, `size`, `color`, `image`, `quantity` (>0), `unit_price`, `line_total`. This is a snapshot, so later product edits don't change past orders.
 
 ### `order_status_history`
 `id`, `order_id` FK, `status`, `note`, `actor` (`customer`, `system`, `courier:Steadfast`, or staff name), `created_at`.
@@ -516,6 +519,10 @@ interface Order {
 
 ### 6.3 Delivery-fee logic
 `resolveZone(zones, district_id, upazila_id)`: an **upazila match** is used first, then a **district match**, then the **default zone**. The fee is `0` if the merchandise total (after discount) is at or above the zone's `free_shipping_min`. The same function runs for the live checkout display, the cart quote and the final order, so they always agree.
+
+**Per-product delivery** (`cartDeliveryFee`): each product uses the area fee (`zone`), **free delivery** or its own **fixed** charge. A cart pays the highest fee among its items, so delivery is free only when every item is free. Example to Dhaka: a free-delivery saree alone → ৳0; the same saree plus a normal kurti → ৳100.
+
+**Admin search** (top of every admin page) finds a customer's data by invoice no, order no, phone (also typed as +880…), name, email, TrxID, tracking ID or any SKU they bought.
 
 ### 6.4 Order pipeline and notifications
 ```mermaid

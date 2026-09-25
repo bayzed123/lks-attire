@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { normalizeBdPhone } from "./http";
+import { salePriceFor } from "./pricing";
 
 export const bdPhone = z
   .string()
@@ -17,6 +18,16 @@ const text = (max: number) => z.string().trim().max(max);
 const reqText = (max: number) => z.string().trim().min(1).max(max);
 const optText = (max: number) => z.string().trim().max(max).optional().nullable().transform((v) => (v ? v : null));
 const money = z.coerce.number().int().min(0).max(10_000_000);
+/** SKU: letters, digits and dashes, stored upper-case. Blank = generated automatically. */
+const skuText = z
+  .string()
+  .trim()
+  .toUpperCase()
+  .max(60)
+  .regex(/^[A-Z0-9._/-]*$/, "Use letters, numbers and dashes only / শুধু অক্ষর, সংখ্যা ও ড্যাশ ব্যবহার করুন")
+  .optional()
+  .nullable()
+  .transform((v) => (v ? v : null));
 const flag = z.union([z.boolean(), z.number()]).transform((v) => (v ? 1 : 0));
 const isoDate = z
   .string()
@@ -104,7 +115,7 @@ export const savedAddressSchema = address.extend({
 // ---------- Admin ----------
 export const variantSchema = z.object({
   id: z.coerce.number().int().positive().optional(),
-  sku: optText(60),
+  sku: skuText,
   size: reqText(30),
   color: reqText(40),
   color_hex: z
@@ -122,7 +133,7 @@ export const variantSchema = z.object({
 export const productSchema = z
   .object({
     slug,
-    sku: optText(60),
+    sku: skuText,
     name_en: reqText(160),
     name_bn: reqText(160),
     description_en: optText(5000),
@@ -134,6 +145,10 @@ export const productSchema = z
     category_id: z.coerce.number().int().positive(),
     price: money.refine((v) => v > 0, { message: "Price must be more than 0 / দাম ০ এর বেশি হতে হবে" }),
     sale_price: money.optional().nullable(),
+    discount_type: z.enum(["none", "percent", "flat"]).default("none"),
+    discount_value: money.default(0),
+    delivery_mode: z.enum(["zone", "free", "fixed"]).default("zone"),
+    delivery_charge: money.optional().nullable(),
     tags: text(300).default(""),
     images: z.array(z.string().trim().max(500)).max(12).default([]),
     status: z.enum(["draft", "active", "archived"]).default("draft"),
@@ -143,7 +158,16 @@ export const productSchema = z
     variants: z.array(variantSchema).min(1).max(200),
   })
   .superRefine((p, ctx) => {
-    if (p.sale_price != null && p.sale_price >= p.price) {
+    if (p.discount_type === "percent" && (p.discount_value < 1 || p.discount_value > 95)) {
+      ctx.addIssue({ code: "custom", path: ["discount_value"], message: "Discount must be 1–95% / ছাড় ১–৯৫% হতে হবে" });
+    }
+    if (p.discount_type === "flat" && (p.discount_value < 1 || p.discount_value >= p.price)) {
+      ctx.addIssue({ code: "custom", path: ["discount_value"], message: "Discount must be less than the price / ছাড় দামের চেয়ে কম হতে হবে" });
+    }
+    if (p.delivery_mode === "fixed" && p.delivery_charge == null) {
+      ctx.addIssue({ code: "custom", path: ["delivery_charge"], message: "Enter the delivery charge / ডেলিভারি চার্জ লিখুন" });
+    }
+    if (p.discount_type === "none" && p.sale_price != null && p.sale_price >= p.price) {
       ctx.addIssue({ code: "custom", path: ["sale_price"], message: "Sale price must be lower than the regular price / ছাড়ের দাম আসল দামের চেয়ে কম হতে হবে" });
     }
     const seen = new Set<string>();
@@ -152,7 +176,14 @@ export const productSchema = z
       if (seen.has(k)) ctx.addIssue({ code: "custom", path: ["variants", i, "size"], message: "Duplicate size + colour / একই সাইজ ও রং দুবার দেওয়া হয়েছে" });
       seen.add(k);
     });
-  });
+  })
+  .transform((p) => ({
+    ...p,
+    // The stored sale price is what the shop, cart and reports use; discounts are turned into it here.
+    sale_price: salePriceFor(p.price, p.discount_type, p.discount_value, p.sale_price || null),
+    discount_value: p.discount_type === "none" ? 0 : p.discount_value,
+    delivery_charge: p.delivery_mode === "fixed" ? p.delivery_charge ?? 0 : null,
+  }));
 export type ProductInput = z.infer<typeof productSchema>;
 
 export const categorySchema = z.object({

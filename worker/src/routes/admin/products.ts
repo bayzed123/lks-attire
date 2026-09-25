@@ -7,6 +7,7 @@ import { perm } from "../../middleware";
 import { audit, expandCategoryIds } from "../../lib/store";
 import { can } from "../../lib/rbac";
 import { parseCsv, toCsv } from "../../lib/csv";
+import { BRAND } from "../../brand.generated";
 
 const app = new Hono<AppEnv>();
 const NOW = "strftime('%Y-%m-%dT%H:%M:%fZ','now')";
@@ -17,8 +18,8 @@ app.get("/", perm("products.read"), async (c) => {
   const args: unknown[] = [];
   if (q.q) {
     const like = `%${q.q.replace(/[%_]/g, "")}%`;
-    where.push("(p.name_en LIKE ? OR p.name_bn LIKE ? OR p.sku LIKE ? OR p.slug LIKE ? OR p.tags LIKE ?)");
-    args.push(like, like, like, like, like);
+    where.push("(p.name_en LIKE ? OR p.name_bn LIKE ? OR p.sku LIKE ? OR p.slug LIKE ? OR p.tags LIKE ? OR EXISTS (SELECT 1 FROM product_variants v WHERE v.product_id = p.id AND v.sku LIKE ?))");
+    args.push(like, like, like, like, like, like);
   }
   if (q.status) {
     where.push("p.status = ?");
@@ -46,7 +47,7 @@ app.get("/", perm("products.read"), async (c) => {
   const [count, rows] = await Promise.all([
     c.env.DB.prepare(`SELECT COUNT(*) AS n FROM products p WHERE ${w}`).bind(...args).first<{ n: number }>(),
     c.env.DB.prepare(
-      `SELECT p.id, p.slug, p.sku, p.name_en, p.name_bn, p.price, p.sale_price, p.status, p.images, p.is_featured, p.sold_count, p.rating_avg, p.created_at, p.updated_at,
+      `SELECT p.id, p.slug, p.sku, p.name_en, p.name_bn, p.price, p.sale_price, p.discount_type, p.discount_value, p.delivery_mode, p.delivery_charge, p.status, p.images, p.is_featured, p.sold_count, p.rating_avg, p.created_at, p.updated_at,
               c.name_en AS category_name, c.name_bn AS category_name_bn,
               (SELECT COALESCE(SUM(stock),0) FROM product_variants v WHERE v.product_id = p.id) AS stock,
               (SELECT COUNT(*) FROM product_variants v WHERE v.product_id = p.id) AS variant_count,
@@ -72,9 +73,42 @@ function productParams(p: ProductInput) {
   return [
     p.slug, p.sku, p.name_en, p.name_bn, p.description_en, p.description_bn, p.fabric_en, p.fabric_bn, p.care_en, p.care_bn,
     p.category_id, p.price, p.sale_price ?? null, p.tags, JSON.stringify(p.images), p.status, p.is_featured, p.meta_title, p.meta_description,
+    p.discount_type, p.discount_value, p.delivery_mode, p.delivery_charge,
   ];
 }
-const PRODUCT_COLS = "slug, sku, name_en, name_bn, description_en, description_bn, fabric_en, fabric_bn, care_en, care_bn, category_id, price, sale_price, tags, images, status, is_featured, meta_title, meta_description";
+const PRODUCT_COLS =
+  "slug, sku, name_en, name_bn, description_en, description_bn, fabric_en, fabric_bn, care_en, care_bn, category_id, price, sale_price, tags, images, status, is_featured, meta_title, meta_description, discount_type, discount_value, delivery_mode, delivery_charge";
+
+const skuPart = (s: string) => s.toUpperCase().replace(/[^A-Z0-9]+/g, "").slice(0, 8) || "X";
+
+/**
+ * Gives every product and variant a SKU. Blank product SKUs become <PREFIX>-<id> (e.g. LKS-0042);
+ * blank variant SKUs become <product SKU>-<SIZE>-<COLOUR> (e.g. LKS-0042-XL-RED).
+ */
+export async function fillMissingSkus(db: D1Database, productId: number): Promise<void> {
+  const p = await db.prepare("SELECT sku FROM products WHERE id = ?").bind(productId).first<{ sku: string | null }>();
+  if (!p) return;
+  let sku = p.sku;
+  if (!sku) {
+    sku = `${BRAND.orderPrefix}-${String(productId).padStart(4, "0")}`;
+    await db.prepare("UPDATE products SET sku = ? || CASE WHEN EXISTS (SELECT 1 FROM products WHERE sku = ? COLLATE NOCASE) THEN '-' || id ELSE '' END WHERE id = ?").bind(sku, sku, productId).run();
+    sku = (await db.prepare("SELECT sku FROM products WHERE id = ?").bind(productId).first<{ sku: string }>())!.sku;
+  }
+  const { results } = await db.prepare("SELECT id, size, color FROM product_variants WHERE product_id = ? AND (sku IS NULL OR sku = '')").bind(productId).all<{ id: number; size: string; color: string }>();
+  for (const v of results) {
+    const vs = `${sku}-${skuPart(v.size)}-${skuPart(v.color)}`;
+    await db.prepare("UPDATE product_variants SET sku = ? || CASE WHEN EXISTS (SELECT 1 FROM product_variants WHERE sku = ? COLLATE NOCASE) THEN '-' || id ELSE '' END WHERE id = ?").bind(vs, vs, v.id).run();
+  }
+}
+
+/** Friendly message when two products/variants would share a SKU. */
+function skuTaken(e: unknown): void {
+  const m = String(e);
+  if (m.includes("UNIQUE") && m.includes("products.sku"))
+    throw new ApiError(409, "duplicate", "Another product already uses this SKU.", "অন্য একটি পণ্যে এই SKU ব্যবহৃত হয়েছে।", [{ field: "sku", en: "Already in use.", bn: "আগেই ব্যবহৃত।" }]);
+  if (m.includes("UNIQUE") && m.includes("product_variants.sku"))
+    throw new ApiError(409, "duplicate", "A variant SKU is already used by another product. Leave it blank to generate one.", "একটি ভ্যারিয়েন্টের SKU অন্য পণ্যে ব্যবহৃত হয়েছে। খালি রাখলে নিজে থেকে তৈরি হবে।");
+}
 
 async function ensureCategory(c: Context<AppEnv>, id: number) {
   const cat = await c.env.DB.prepare("SELECT id FROM categories WHERE id = ? AND deleted_at IS NULL").bind(id).first();
@@ -110,9 +144,11 @@ app.post("/", perm("products.write"), async (c) => {
   try {
     await c.env.DB.batch(stmts);
   } catch (e) {
+    skuTaken(e);
     slugTaken(e);
   }
   const row = await c.env.DB.prepare("SELECT id FROM products WHERE slug = ?").bind(p.slug).first<{ id: number }>();
+  await fillMissingSkus(c.env.DB, row!.id);
   await audit(c, "create", "product", row!.id, { name: p.name_en, variants: p.variants.length });
   return c.json({ id: row!.id, en: "Product created.", bn: "পণ্য তৈরি হয়েছে।" }, 201);
 });
@@ -121,7 +157,7 @@ app.put("/:id{[0-9]+}", perm("products.write"), async (c) => {
   const id = Number(c.req.param("id"));
   const p = validate(productSchema, await c.req.json().catch(() => ({})));
   await ensureCategory(c, p.category_id);
-  const before = await c.env.DB.prepare("SELECT name_en, price, sale_price, status FROM products WHERE id = ?").bind(id).first<Record<string, unknown>>();
+  const before = await c.env.DB.prepare("SELECT name_en, price, sale_price, status, discount_type || ':' || discount_value AS discount, delivery_mode || ':' || COALESCE(delivery_charge, '') AS delivery FROM products WHERE id = ?").bind(id).first<Record<string, unknown>>();
   if (!before) throw E.notFound("Product");
   const existing = await c.env.DB.prepare("SELECT id, stock FROM product_variants WHERE product_id = ?").bind(id).all<{ id: number; stock: number }>();
   const existingById = new Map(existing.results.map((v) => [v.id, v]));
@@ -159,9 +195,11 @@ app.put("/:id{[0-9]+}", perm("products.write"), async (c) => {
   } catch (e) {
     if (String(e).includes("product_variants.product_id, product_variants.size, product_variants.color"))
       throw E.conflict("Two variants have the same size and colour.", "দুটি ভ্যারিয়েন্টে একই সাইজ ও রং।");
+    skuTaken(e);
     slugTaken(e);
   }
-  await audit(c, "update", "product", id, { before, after: { name_en: p.name_en, price: p.price, sale_price: p.sale_price, status: p.status }, variants: p.variants.length });
+  await fillMissingSkus(c.env.DB, id);
+  await audit(c, "update", "product", id, { before, after: { name_en: p.name_en, price: p.price, sale_price: p.sale_price, status: p.status, discount: `${p.discount_type}:${p.discount_value}`, delivery: `${p.delivery_mode}:${p.delivery_charge ?? ""}` }, variants: p.variants.length });
   return c.json({ id, en: "Product saved.", bn: "পণ্য সংরক্ষণ করা হয়েছে।" });
 });
 
@@ -172,13 +210,14 @@ app.post("/:id{[0-9]+}/duplicate", perm("products.write"), async (c) => {
   const slug = `${p.slug}-copy-${Date.now().toString(36).slice(-4)}`;
   await c.env.DB.batch([
     c.env.DB.prepare(
-      `INSERT INTO products (${PRODUCT_COLS}) SELECT ?, sku, name_en || ' (copy)', name_bn || ' (কপি)', description_en, description_bn, fabric_en, fabric_bn, care_en, care_bn, category_id, price, sale_price, tags, images, 'draft', 0, meta_title, meta_description FROM products WHERE id = ?`,
+      `INSERT INTO products (${PRODUCT_COLS}) SELECT ?, NULL, name_en || ' (copy)', name_bn || ' (কপি)', description_en, description_bn, fabric_en, fabric_bn, care_en, care_bn, category_id, price, sale_price, tags, images, 'draft', 0, meta_title, meta_description, discount_type, discount_value, delivery_mode, delivery_charge FROM products WHERE id = ?`,
     ).bind(slug, id),
     c.env.DB.prepare(
-      "INSERT INTO product_variants (product_id, sku, size, color, color_hex, stock, price_override, low_stock_threshold) SELECT (SELECT id FROM products WHERE slug = ?), sku, size, color, color_hex, 0, price_override, low_stock_threshold FROM product_variants WHERE product_id = ?",
+      "INSERT INTO product_variants (product_id, sku, size, color, color_hex, stock, price_override, low_stock_threshold) SELECT (SELECT id FROM products WHERE slug = ?), NULL, size, color, color_hex, 0, price_override, low_stock_threshold FROM product_variants WHERE product_id = ?",
     ).bind(slug, id),
   ]);
   const row = await c.env.DB.prepare("SELECT id FROM products WHERE slug = ?").bind(slug).first<{ id: number }>();
+  await fillMissingSkus(c.env.DB, row!.id);
   await audit(c, "duplicate", "product", row!.id, { from: id });
   return c.json({ id: row!.id, en: "Copy created as a draft (stock set to 0).", bn: "ড্রাফট হিসেবে কপি তৈরি হয়েছে (স্টক ০)।" }, 201);
 });
@@ -266,7 +305,7 @@ app.post("/import", perm("products.write"), async (c) => {
         `INSERT INTO products (slug, name_en, name_bn, category_id, price, sale_price, status, tags, description_en, description_bn, fabric_en, fabric_bn, images)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
          ON CONFLICT(slug) DO UPDATE SET name_en=excluded.name_en, name_bn=excluded.name_bn, category_id=excluded.category_id, price=excluded.price,
-           sale_price=excluded.sale_price, status=excluded.status, tags=excluded.tags, description_en=COALESCE(excluded.description_en, description_en),
+           sale_price=excluded.sale_price, discount_type='none', discount_value=0, status=excluded.status, tags=excluded.tags, description_en=COALESCE(excluded.description_en, description_en),
            description_bn=COALESCE(excluded.description_bn, description_bn), fabric_en=COALESCE(excluded.fabric_en, fabric_en), fabric_bn=COALESCE(excluded.fabric_bn, fabric_bn),
            images=CASE WHEN excluded.images = '[]' THEN images ELSE excluded.images END, updated_at=${NOW}`,
       ).bind(
@@ -280,7 +319,7 @@ app.post("/import", perm("products.write"), async (c) => {
         c.env.DB.prepare(
           `INSERT INTO product_variants (product_id, sku, size, color, color_hex, stock) VALUES ((SELECT id FROM products WHERE slug = ?), ?, ?, ?, ?, ?)
            ON CONFLICT(product_id, size, color) DO UPDATE SET stock = excluded.stock, sku = COALESCE(excluded.sku, sku), color_hex = COALESCE(excluded.color_hex, color_hex)`,
-        ).bind(slug, v.variant_sku || null, v.size, v.color, /^#[0-9a-fA-F]{6}$/.test(v.color_hex ?? "") ? v.color_hex : null, Number(v.stock)),
+        ).bind(slug, v.variant_sku ? v.variant_sku.trim().toUpperCase() : null, v.size, v.color, /^#[0-9a-fA-F]{6}$/.test(v.color_hex ?? "") ? v.color_hex : null, Number(v.stock)),
       );
       stmts.push(
         c.env.DB.prepare(
@@ -289,7 +328,14 @@ app.post("/import", perm("products.write"), async (c) => {
       );
     }
   }
-  await c.env.DB.batch(stmts);
+  try {
+    await c.env.DB.batch(stmts);
+  } catch (e) {
+    skuTaken(e);
+    throw e;
+  }
+  const ids = await c.env.DB.prepare(`SELECT id FROM products WHERE slug IN (${[...groups.keys()].map(() => "?").join(",")})`).bind(...groups.keys()).all<{ id: number }>();
+  for (const r of ids.results) await fillMissingSkus(c.env.DB, r.id);
   await audit(c, "import", "product", null, { products: groups.size, rows: rows.length });
   return c.json({ imported: groups.size, rows: rows.length, errors: [], en: `${groups.size} product(s) imported.`, bn: `${groups.size}টি পণ্য ইমপোর্ট হয়েছে।` });
 });

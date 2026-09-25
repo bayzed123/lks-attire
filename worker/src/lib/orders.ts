@@ -2,7 +2,7 @@
 import type { Env } from "../env";
 import type { CheckoutInput } from "./schemas";
 import { ApiError, E, parseJson } from "./http";
-import { deliveryFee, effectiveUnitPrice, evaluateCoupon, resolveZone, COUPON_MESSAGES, type CouponRule } from "./pricing";
+import { cartDeliveryFee, effectiveUnitPrice, evaluateCoupon, resolveZone, COUPON_MESSAGES, type CouponRule } from "./pricing";
 import { expandCategoryIds, loadZones } from "./store";
 import { randomCode, randomToken } from "./crypto";
 import { BRAND } from "../brand.generated";
@@ -36,6 +36,7 @@ export function restoresStock(to: OrderStatus): boolean {
 export interface OrderRow {
   id: number;
   order_no: string;
+  invoice_no: string | null;
   public_token: string;
   customer_id: number | null;
   customer_name: string;
@@ -70,6 +71,9 @@ export interface OrderRow {
   updated_at: string;
 }
 
+/** INV-<yymm>-<5-digit order id>, e.g. INV-2609-00042. Also used by migration 0002 for old orders. */
+export const INVOICE_NO_SQL = "'INV-' || substr(created_at, 3, 2) || substr(created_at, 6, 2) || '-' || printf('%05d', id)";
+
 export function newOrderNo(): string {
   const d = new Date();
   const ymd = `${String(d.getUTCFullYear()).slice(2)}${String(d.getUTCMonth() + 1).padStart(2, "0")}${String(d.getUTCDate()).padStart(2, "0")}`;
@@ -79,6 +83,7 @@ export function newOrderNo(): string {
 interface VariantJoin {
   variant_id: number;
   product_id: number;
+  sku: string | null;
   size: string;
   color: string;
   stock: number;
@@ -90,6 +95,8 @@ interface VariantJoin {
   images: string;
   category_id: number | null;
   status: string;
+  delivery_mode: "zone" | "free" | "fixed";
+  delivery_charge: number | null;
 }
 
 export interface Quote {
@@ -97,6 +104,8 @@ export interface Quote {
     variantId: number;
     productId: number;
     categoryId: number | null;
+    sku: string | null;
+    deliveryMode: "zone" | "free" | "fixed";
     name_en: string;
     name_bn: string;
     size: string;
@@ -127,8 +136,8 @@ export async function quote(
   const ids = [...merged.keys()];
   const placeholders = ids.map(() => "?").join(",");
   const { results } = await env.DB.prepare(
-    `SELECT v.id AS variant_id, v.product_id, v.size, v.color, v.stock, v.price_override,
-            p.price, p.sale_price, p.name_en, p.name_bn, p.images, p.category_id, p.status
+    `SELECT v.id AS variant_id, v.product_id, v.sku, v.size, v.color, v.stock, v.price_override,
+            p.price, p.sale_price, p.name_en, p.name_bn, p.images, p.category_id, p.status, p.delivery_mode, p.delivery_charge
        FROM product_variants v JOIN products p ON p.id = v.product_id
       WHERE v.id IN (${placeholders}) AND p.deleted_at IS NULL`,
   )
@@ -155,6 +164,8 @@ export async function quote(
       variantId,
       productId: v.product_id,
       categoryId: v.category_id,
+      sku: v.sku,
+      deliveryMode: v.delivery_mode,
       name_en: v.name_en,
       name_bn: v.name_bn,
       size: v.size,
@@ -186,7 +197,11 @@ export async function quote(
   const zones = await loadZones(env);
   const zone = resolveZone(zones, address.district_id, address.upazila_id);
   if (!zone) throw E.badRequest("We don't deliver to this area yet.", "এই এলাকায় এখনো ডেলিভারি দেওয়া হয় না।");
-  const fee = deliveryFee(zone, subtotal - discount);
+  const fee = cartDeliveryFee(
+    zone,
+    subtotal - discount,
+    lines.map((l) => ({ mode: l.deliveryMode, charge: byId.get(l.variantId)!.delivery_charge })),
+  );
 
   return {
     lines,
@@ -250,12 +265,14 @@ export async function createOrder(env: Env, input: CheckoutInput, customerId: nu
       isManualMfs ? input.paymentRef!.trim() : null, input.note ?? null, input.lang,
     ),
   );
+  // Invoice number from the order's row id: unique, sequential and easy to read out on the phone.
+  stmts.push(env.DB.prepare(`UPDATE orders SET invoice_no = ${INVOICE_NO_SQL} WHERE order_no = ?`).bind(orderNo));
   for (const l of q.lines) {
     stmts.push(
       env.DB.prepare(
-        `INSERT INTO order_items (order_id, product_id, variant_id, category_id, name_en, name_bn, size, color, image, quantity, unit_price, line_total)
-         VALUES ((SELECT id FROM orders WHERE order_no = ?), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      ).bind(orderNo, l.productId, l.variantId, l.categoryId, l.name_en, l.name_bn, l.size, l.color, l.image, l.quantity, l.unitPrice, l.lineTotal),
+        `INSERT INTO order_items (order_id, product_id, variant_id, category_id, sku, name_en, name_bn, size, color, image, quantity, unit_price, line_total)
+         VALUES ((SELECT id FROM orders WHERE order_no = ?), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      ).bind(orderNo, l.productId, l.variantId, l.categoryId, l.sku, l.name_en, l.name_bn, l.size, l.color, l.image, l.quantity, l.unitPrice, l.lineTotal),
     );
     // CHECK (stock >= 0) on product_variants aborts the whole batch if stock ran out concurrently.
     stmts.push(env.DB.prepare("UPDATE product_variants SET stock = stock - ? WHERE id = ?").bind(l.quantity, l.variantId));

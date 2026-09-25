@@ -9,7 +9,7 @@ export function productCard(p, { eager = false } = {}) {
     <a href="/product/${p.slug}" class="media" aria-label="${name}">
       ${img1 ? html`<img src="${img1}" alt="${name}" width="600" height="800" loading="${eager ? "eager" : "lazy"}" decoding="async">` : ""}
       ${img2 ? html`<img class="alt" src="${img2}" alt="" width="600" height="800" loading="lazy" decoding="async">` : ""}
-      ${!p.in_stock ? html`<span class="tag out">${t("soldOut")}</span>` : p.discount_percent ? html`<span class="tag">-${num(p.discount_percent)}% ${t("off")}</span>` : ""}
+      <span class="tags">${p.in_stock && p.delivery_mode === "free" ? html`<span class="tag free">${t("freeDelivery")}</span>` : ""}${!p.in_stock ? html`<span class="tag out">${t("soldOut")}</span>` : p.discount_percent ? html`<span class="tag">-${num(p.discount_percent)}% ${t("off")}</span>` : ""}</span>
     </a>
     <button class="icon-btn fav" type="button" data-fav="${p.id}" aria-pressed="${fav}" aria-label="${fav ? t("removeFromWishlist") : t("addToWishlist")}">${icon("heart")}</button>
     <div class="body">
