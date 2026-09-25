@@ -6,10 +6,10 @@
  *   2. Writes their IDs into wrangler.toml (the bindings DB / KV / MEDIA)
  *   3. Applies D1 migrations
  *   4. Seeds the database the first time only (when the settings table is empty)
- *   5. Creates the first Super Admin if ADMIN_EMAIL + ADMIN_PASSWORD are set and no admin exists
+ *   5. Creates the first Super Admin if ADMIN_USERNAME (or ADMIN_EMAIL) + ADMIN_PASSWORD are set and no admin exists
  *
  * Needs CLOUDFLARE_API_TOKEN + CLOUDFLARE_ACCOUNT_ID in the environment (GitHub secrets in CI).
- * Optional env: WORKER_NAME (default from wrangler.toml), PUBLIC_URL, ADMIN_NAME, ADMIN_EMAIL, ADMIN_PASSWORD.
+ * Optional env: WORKER_NAME (default from wrangler.toml), PUBLIC_URL, ADMIN_NAME, ADMIN_USERNAME (or ADMIN_EMAIL), ADMIN_PASSWORD.
  *
  * Usage: node scripts/provision.mjs            (after `node scripts/build-brand.mjs`)
  */
@@ -111,18 +111,21 @@ if (freshDb || count("SELECT COUNT(*) AS n FROM settings") === 0) {
 } else log("Database already seeded — skipping seed (your admin edits are kept)");
 
 // ---------- First admin ----------
-const { ADMIN_EMAIL, ADMIN_PASSWORD, ADMIN_NAME = "Owner" } = process.env;
-if (ADMIN_EMAIL && ADMIN_PASSWORD) {
+// ADMIN_USERNAME (e.g. "owner") or ADMIN_EMAIL — either works as the sign-in ID.
+const { ADMIN_PASSWORD, ADMIN_NAME } = process.env;
+const ADMIN_LOGIN = (process.env.ADMIN_USERNAME || process.env.ADMIN_EMAIL || "").trim().toLowerCase();
+if (ADMIN_LOGIN && ADMIN_PASSWORD) {
   if (count("SELECT COUNT(*) AS n FROM admins") === 0) {
+    if (!/^[a-z0-9._@+-]{3,120}$/.test(ADMIN_LOGIN)) { console.error("✖ ADMIN_USERNAME must be 3+ characters: letters, numbers, dot, dash or underscore (no spaces)"); process.exit(1); }
     if (ADMIN_PASSWORD.length < 10) { console.error("✖ ADMIN_PASSWORD must be at least 10 characters"); process.exit(1); }
     const salt = randomBytes(16);
     const hash = `pbkdf2$100000$${salt.toString("base64")}$${pbkdf2Sync(ADMIN_PASSWORD, salt, 100000, 32, "sha256").toString("base64")}`;
     const q = (s) => `'${String(s).replace(/'/g, "''")}'`;
-    writeFileSync(".admin.sql", `INSERT INTO admins (name, email, password_hash, role) VALUES (${q(ADMIN_NAME)}, ${q(ADMIN_EMAIL)}, ${q(hash)}, 'super_admin');\n`);
+    writeFileSync(".admin.sql", `INSERT INTO admins (name, email, password_hash, role) VALUES (${q(ADMIN_NAME || "Owner")}, ${q(ADMIN_LOGIN)}, ${q(hash)}, 'super_admin');\n`);
     wrangler(["d1", "execute", "DB", "--remote", "--file=.admin.sql"]);
     unlinkSync(".admin.sql");
-    log(`Super Admin ${ADMIN_EMAIL} created`);
-  } else log("An admin already exists — ADMIN_EMAIL/ADMIN_PASSWORD ignored");
-} else log("ADMIN_EMAIL / ADMIN_PASSWORD not set — create the first admin later (see docs/GITHUB-SECRETS.md)");
+    log(`Super Admin "${ADMIN_LOGIN}" created — sign in at /admin/ with this username and ADMIN_PASSWORD`);
+  } else log("An admin already exists — ADMIN_USERNAME/ADMIN_PASSWORD ignored");
+} else log("ADMIN_USERNAME (or ADMIN_EMAIL) / ADMIN_PASSWORD not set — create the first admin later (see docs/GITHUB-SECRETS.md)");
 
 console.log("✔ Provisioning complete");

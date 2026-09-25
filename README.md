@@ -17,7 +17,7 @@ One **Cloudflare Worker** (Hono + TypeScript) serves the bilingual storefront, t
 | ✅ **Tests** | 59 Vitest unit/integration tests in the Workers runtime · Playwright E2E (checkout, postcode auto-fill, language, admin, no horizontal scroll on phones) |
 
 ## 🚀 Deploy (GitHub Actions does everything)
-1. Add the GitHub secrets `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN` (**done**), plus `ADMIN_EMAIL` and `ADMIN_PASSWORD` for your first login.
+1. Add the GitHub secrets `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN` (**done**), plus `ADMIN_USERNAME` and `ADMIN_PASSWORD` for your first login.
 2. Make sure the API token has **D1 Edit** as well as the Workers/KV/R2 permissions.
 3. Merge to `main`. The workflow creates `lks-attire-db` (D1), `lks-attire-kv` (KV) and `lks-attire-media` (R2), binds them, migrates, seeds, creates your admin and deploys.
 

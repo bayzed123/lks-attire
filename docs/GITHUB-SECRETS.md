@@ -35,7 +35,7 @@ Create it from the **"Edit Cloudflare Workers"** template, then **add** the D1 p
 ## 2. Strongly recommended GitHub secrets (your first admin login)
 | Secret name | Example | What it does |
 |---|---|---|
-| `ADMIN_EMAIL` | `owner@lksattire.com` | Email for the first **Super Admin** (created only if no admin exists yet) |
+| `ADMIN_USERNAME` | `lksadmin` | Sign-in username for the first **Super Admin** (created only if no admin exists yet). Letters, numbers, `.` `-` `_`, no spaces. You can use `ADMIN_EMAIL` instead if you prefer to sign in with an email |
 | `ADMIN_PASSWORD` | a long password (≥ 10 characters) | That admin's password. Sign in at `https://<your-worker>.workers.dev/admin/` |
 | `ADMIN_NAME` *(optional)* | `Lk's Attire Owner` | Display name |
 
@@ -86,7 +86,7 @@ Callback URLs to register with providers (replace the host with your domain or w
 ## 6. Run it
 - Merge the pull request into `main` (or open **Actions → CI & Deploy → Run workflow**).
 - Open the finished run → **Summary** shows the **Store URL** and **Admin URL**.
-- Sign in with `ADMIN_EMAIL` / `ADMIN_PASSWORD`. Then, in the admin:
+- Sign in with `ADMIN_USERNAME` / `ADMIN_PASSWORD`. Then, in the admin:
   - **Settings → Branding:** upload/replace the logo; add Facebook/Instagram/TikTok links
   - **Settings → Payment methods:** your **bKash / Nagad / Rocket numbers**
   - **Homepage banners:** hero slides (top), festive banner, **offer strip** (promo)
@@ -94,7 +94,7 @@ Callback URLs to register with providers (replace the host with your domain or w
   - **Products:** replace the starter demo items with your own photos
 
 ## Summary: names to add
-**GitHub → Secrets:** `CLOUDFLARE_ACCOUNT_ID` ✅, `CLOUDFLARE_API_TOKEN` ✅, `ADMIN_EMAIL`, `ADMIN_PASSWORD` *(+ optional integration secrets from §4)*
+**GitHub → Secrets:** `CLOUDFLARE_ACCOUNT_ID` ✅, `CLOUDFLARE_API_TOKEN` ✅, `ADMIN_USERNAME`, `ADMIN_PASSWORD` *(+ optional integration secrets from §4)*
 **GitHub → Variables (optional):** `WORKER_NAME`, `PUBLIC_URL`, `BRAND`, `PALETTE`
 **Cloudflare:** API token permissions from §1 (incl. **D1 Edit**), a workers.dev subdomain, and R2 enabled (optional)
 **Cloudflare Worker secrets:** nothing to add by hand. The pipeline copies the §4 secrets from GitHub automatically.

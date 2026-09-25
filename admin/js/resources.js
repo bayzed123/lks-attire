@@ -175,7 +175,7 @@ export const RESOURCES = {
     ],
     fields: async () => [
       { name: "name", label: L("Name", "নাম"), required: true },
-      { name: "email", label: L("Email (used to sign in)", "ইমেইল (সাইন ইনের জন্য)"), type: "email", required: true },
+      { name: "email", label: L("Username or email (used to sign in)", "ইউজারনেম বা ইমেইল (সাইন ইনের জন্য)"), required: true },
       { name: "phone", label: L("Phone", "ফোন") },
       { name: "role", label: L("Role", "রোল"), type: "select", required: true, options: [["order_processor", L("Order Processor — handles orders", "অর্ডার প্রসেসর — অর্ডার সামলান")], ["manager", L("Manager — everything except staff & keys", "ম্যানেজার — স্টাফ ও কী ছাড়া সব")], ["viewer", L("Read-only Viewer", "শুধু দেখতে পারবেন")], ["super_admin", L("Super Admin — full control", "সুপার অ্যাডমিন — সম্পূর্ণ নিয়ন্ত্রণ")]] },
       { name: "password", label: L("Password (min 10 characters; leave empty to keep)", "পাসওয়ার্ড (কমপক্ষে ১০ অক্ষর; পরিবর্তন না করলে খালি রাখুন)"), type: "password", span: 2 },

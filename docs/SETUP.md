@@ -13,7 +13,7 @@ npx wrangler login          # opens the browser once
 
 > **Using GitHub Actions? You can skip §2, §4 and §5.** The pipeline creates and binds the resources and copies secrets automatically. See [`GITHUB-SECRETS.md`](GITHUB-SECRETS.md). You can also run the same provisioning from your computer:
 > ```bash
-> export CLOUDFLARE_API_TOKEN=... CLOUDFLARE_ACCOUNT_ID=... ADMIN_EMAIL=you@example.com ADMIN_PASSWORD='a-long-password'
+> export CLOUDFLARE_API_TOKEN=... CLOUDFLARE_ACCOUNT_ID=... ADMIN_USERNAME=owner ADMIN_PASSWORD='a-long-password'
 > npm run build && node scripts/provision.mjs && npx wrangler deploy
 > ```
 
