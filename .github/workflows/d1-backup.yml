@@ -1,0 +1,33 @@
+# Recover (NIST CSF): nightly export of the production D1 database, kept as a private workflow artifact for 30 days.
+# Restore steps: docs/SECURITY.md → "Recover". Uses the same CLOUDFLARE_* secrets as the deploy.
+name: Nightly D1 backup
+
+on:
+  schedule:
+    - cron: "40 20 * * *" # 02:40 Bangladesh time
+  workflow_dispatch:
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      DB_NAME: ${{ vars.WORKER_NAME || 'lks-attire' }}-db
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Export D1
+        run: |
+          mkdir -p backup
+          npx wrangler d1 export "$DB_NAME" --remote --output "backup/d1-$(date -u +%Y%m%d-%H%M).sql"
+          gzip backup/*.sql
+      - uses: actions/upload-artifact@v4
+        with:
+          name: d1-backup-${{ github.run_id }}
+          path: backup/
+          retention-days: 30

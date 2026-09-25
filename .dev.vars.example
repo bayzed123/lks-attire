@@ -1,0 +1,35 @@
+# Copy to .dev.vars for local development (`npm run dev`). NEVER commit .dev.vars.
+# In production set each secret with: npx wrangler secret put NAME
+ENVIRONMENT=development
+PUBLIC_URL=
+BOOTSTRAP_TOKEN=change-me-to-a-long-random-string
+
+# bKash Tokenized Checkout (sandbox values from the bKash merchant portal)
+BKASH_APP_KEY=
+BKASH_APP_SECRET=
+BKASH_USERNAME=
+BKASH_PASSWORD=
+BKASH_BASE_URL=https://tokenized.sandbox.bka.sh/v1.2.0-beta
+
+# SSLCommerz (cards + MFS hosted page)
+SSLCZ_STORE_ID=
+SSLCZ_STORE_PASSWD=
+SSLCZ_SANDBOX=true
+
+# Steadfast courier
+STEADFAST_API_KEY=
+STEADFAST_SECRET_KEY=
+STEADFAST_WEBHOOK_TOKEN=
+
+# Notifications
+SMS_API_URL=https://bulksmsbd.net/api/smsapi
+SMS_API_KEY=
+SMS_SENDER_ID=
+WHATSAPP_TOKEN=
+WHATSAPP_PHONE_ID=
+RESEND_API_KEY=
+EMAIL_FROM=
+
+# Cloudflare Turnstile (optional bot protection on login/checkout)
+TURNSTILE_SITE_KEY=
+TURNSTILE_SECRET=

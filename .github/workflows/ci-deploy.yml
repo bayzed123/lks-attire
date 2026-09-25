@@ -1,0 +1,132 @@
+# CI/CD — GitHub is the source of truth, Cloudflare Workers is the runtime.
+#
+# Every push / pull request:  build brand → TypeScript check → unit + integration tests → E2E checkout tests
+# Push to main (after tests):  auto-create/bind Cloudflare D1 + KV + R2 → migrate → first-run seed + admin
+#                              → wrangler deploy → sync Worker secrets → smoke test
+#
+# REQUIRED repository secrets (Settings → Secrets and variables → Actions → Secrets):
+#   CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID
+# Recommended secrets (first deploy creates your Super Admin):  ADMIN_EMAIL, ADMIN_PASSWORD
+# Optional secrets (integrations) — see docs/GITHUB-SECRETS.md for the full list.
+# Optional variables: WORKER_NAME (default lks-attire), BRAND (default lks-attire), PALETTE, PUBLIC_URL
+name: CI & Deploy
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  BRAND: ${{ vars.BRAND || 'lks-attire' }}
+  PALETTE: ${{ vars.PALETTE }}
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Build brand
+        run: node scripts/build-brand.mjs
+      - name: TypeScript check
+        run: npx tsc --noEmit
+      - name: Unit & integration tests (Workers runtime + local D1/KV/R2)
+        run: npx vitest run
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+      - name: End-to-end checkout tests
+        run: npx playwright test
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
+
+  deploy:
+    needs: test
+    if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: production
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      WORKER_NAME: ${{ vars.WORKER_NAME || 'lks-attire' }}
+      PUBLIC_URL: ${{ vars.PUBLIC_URL }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Check required secrets
+        run: |
+          test -n "$CLOUDFLARE_API_TOKEN" || { echo "::error::Add the CLOUDFLARE_API_TOKEN repository secret"; exit 1; }
+          test -n "$CLOUDFLARE_ACCOUNT_ID" || { echo "::error::Add the CLOUDFLARE_ACCOUNT_ID repository secret"; exit 1; }
+      - name: Build brand
+        run: node scripts/build-brand.mjs
+      - name: Provision Cloudflare (D1 + KV + R2), migrate, first-run seed & admin
+        env:
+          ADMIN_NAME: ${{ secrets.ADMIN_NAME }}
+          ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
+          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+        run: node scripts/provision.mjs
+      - name: TypeScript check (deploy commit)
+        run: npx tsc --noEmit
+      - name: Deploy Worker
+        id: deploy
+        run: |
+          npx wrangler deploy 2>&1 | tee deploy.log
+          url=$(grep -Eo 'https://[a-zA-Z0-9.-]+\.workers\.dev' deploy.log | head -1)
+          echo "url=${PUBLIC_URL:-$url}" >> "$GITHUB_OUTPUT"
+      - name: Sync optional integration secrets to the Worker
+        env:
+          BOOTSTRAP_TOKEN: ${{ secrets.BOOTSTRAP_TOKEN }}
+          BKASH_APP_KEY: ${{ secrets.BKASH_APP_KEY }}
+          BKASH_APP_SECRET: ${{ secrets.BKASH_APP_SECRET }}
+          BKASH_USERNAME: ${{ secrets.BKASH_USERNAME }}
+          BKASH_PASSWORD: ${{ secrets.BKASH_PASSWORD }}
+          BKASH_BASE_URL: ${{ secrets.BKASH_BASE_URL }}
+          NAGAD_MERCHANT_ID: ${{ secrets.NAGAD_MERCHANT_ID }}
+          NAGAD_MERCHANT_PRIVATE_KEY: ${{ secrets.NAGAD_MERCHANT_PRIVATE_KEY }}
+          NAGAD_PG_PUBLIC_KEY: ${{ secrets.NAGAD_PG_PUBLIC_KEY }}
+          SSLCZ_STORE_ID: ${{ secrets.SSLCZ_STORE_ID }}
+          SSLCZ_STORE_PASSWD: ${{ secrets.SSLCZ_STORE_PASSWD }}
+          SSLCZ_SANDBOX: ${{ secrets.SSLCZ_SANDBOX }}
+          STEADFAST_API_KEY: ${{ secrets.STEADFAST_API_KEY }}
+          STEADFAST_SECRET_KEY: ${{ secrets.STEADFAST_SECRET_KEY }}
+          STEADFAST_WEBHOOK_TOKEN: ${{ secrets.STEADFAST_WEBHOOK_TOKEN }}
+          PATHAO_CLIENT_ID: ${{ secrets.PATHAO_CLIENT_ID }}
+          PATHAO_CLIENT_SECRET: ${{ secrets.PATHAO_CLIENT_SECRET }}
+          REDX_API_TOKEN: ${{ secrets.REDX_API_TOKEN }}
+          SMS_API_URL: ${{ secrets.SMS_API_URL }}
+          SMS_API_KEY: ${{ secrets.SMS_API_KEY }}
+          SMS_SENDER_ID: ${{ secrets.SMS_SENDER_ID }}
+          WHATSAPP_TOKEN: ${{ secrets.WHATSAPP_TOKEN }}
+          WHATSAPP_PHONE_ID: ${{ secrets.WHATSAPP_PHONE_ID }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
+          TURNSTILE_SITE_KEY: ${{ secrets.TURNSTILE_SITE_KEY }}
+          TURNSTILE_SECRET: ${{ secrets.TURNSTILE_SECRET }}
+        run: node scripts/sync-secrets.mjs
+      - name: Smoke test
+        if: steps.deploy.outputs.url != ''
+        run: |
+          for i in 1 2 3 4 5; do curl -fsS "${{ steps.deploy.outputs.url }}/api/health" && exit 0; sleep 5; done; exit 1
+      - name: Summary
+        run: |
+          echo "### 🚀 Lk's Attire deployed" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Store: ${{ steps.deploy.outputs.url }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Admin: ${{ steps.deploy.outputs.url }}/admin/" >> "$GITHUB_STEP_SUMMARY"

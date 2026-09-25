@@ -1,0 +1,4 @@
+{
+  "admin": { "id": 1, "name": "Owner", "email": "owner@test.dev", "role": "super_admin" },
+  "permissions": ["dashboard.view", "products.read", "products.write", "orders.read", "orders.update", "…"]
+}

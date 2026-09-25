@@ -1,0 +1,62 @@
+{
+  "$schema": "../brand.schema.json",
+  "id": "_template",
+  "name": { "en": "Nokshi House", "bn": "নকশি হাউস" },
+  "shortName": "Nokshi",
+  "tagline": { "en": "Stitched stories, made in Bangladesh", "bn": "সেলাইয়ে গল্প, বাংলাদেশে তৈরি" },
+  "description": {
+    "en": "Example second client used to prove the brand pipeline. Copy this folder to brands/<client-id>/ and edit.",
+    "bn": "ব্র্যান্ড পাইপলাইনের উদাহরণ ক্লায়েন্ট। এই ফোল্ডারটি brands/<client-id>/ এ কপি করে পরিবর্তন করুন।"
+  },
+  "logo": { "concept": "Kantha running-stitch underline beneath a geometric sans wordmark.", "wordmark": "Nokshi House", "monogram": "N" },
+  "orderPrefix": "NKH",
+  "domain": "example.com",
+  "locale": { "default": "en", "supported": ["bn", "en"], "currency": "BDT", "currencySymbol": "৳" },
+  "palettes": {
+    "indigo-kantha": {
+      "label": "Indigo Kantha",
+      "bg": "#F5F6FA", "surface": "#FFFFFF", "surfaceAlt": "#E8EAF3",
+      "ink": "#171A2B", "inkSoft": "#555A73",
+      "primary": "#23306B", "primaryInk": "#FFFFFF",
+      "accent": "#E0703A", "accentSoft": "#F8DCCB", "gold": "#D9A441",
+      "line": "#D9DCE8", "success": "#2F7A55", "danger": "#B3261E",
+      "motifA": "#23306B", "motifB": "#E0703A", "motifC": "#F8DCCB"
+    }
+  },
+  "activePalette": "indigo-kantha",
+  "design": {
+    "heroStyle": "split",
+    "motif": "stitch",
+    "cardStyle": "square",
+    "radius": "6px",
+    "buttonShape": "square",
+    "density": "compact",
+    "fonts": {
+      "display": "Space Grotesk", "displayWeights": "600",
+      "body": "Noto Sans Bengali", "bodyWeights": "400;600",
+      "googleFontsQuery": "family=Space+Grotesk:wght@600&family=Noto+Sans+Bengali:wght@400;600"
+    }
+  },
+  "admin": { "theme": "soft-neumorph", "primary": "#3B4BA8", "primaryDeep": "#23306B", "pink": "#E0703A", "bg": "#EEF0F7" },
+  "contact": { "phone": "+8801800000000", "whatsapp": "8801800000000", "email": "hello@example.com", "hours": { "en": "Every day, 10am–8pm", "bn": "প্রতিদিন, সকাল ১০টা–রাত ৮টা" } },
+  "location": {
+    "street": { "en": "House 1, Road 1", "bn": "বাড়ি ১, রোড ১" },
+    "city": { "en": "Dhaka", "bn": "ঢাকা" },
+    "region": { "en": "Dhaka Division", "bn": "ঢাকা বিভাগ" },
+    "postalCode": "1205", "country": "BD", "lat": 23.7465, "lng": 90.3760,
+    "mapEmbedUrl": "https://www.google.com/maps?q=Dhanmondi,+Dhaka&output=embed"
+  },
+  "social": { "facebook": "", "instagram": "", "tiktok": "", "youtube": "" },
+  "seed": {
+    "categories": [
+      { "slug": "panjabi", "en": "Panjabi", "bn": "পাঞ্জাবি" },
+      { "slug": "kantha", "en": "Nakshi Kantha", "bn": "নকশি কাঁথা" },
+      { "slug": "accessories", "en": "Accessories", "bn": "এক্সেসরিজ" }
+    ],
+    "deliveryZones": [
+      { "code": "dhaka", "en": "Inside Dhaka", "bn": "ঢাকার ভেতরে", "fee": 70, "freeOver": 4000, "upazilaIds": [], "districtIds": [47], "etaEn": "1–2 days", "etaBn": "১–২ দিন" },
+      { "code": "rest_bd", "en": "Outside Dhaka", "bn": "ঢাকার বাইরে", "fee": 130, "freeOver": 6000, "upazilaIds": [], "districtIds": [], "isDefault": true, "etaEn": "3–5 days", "etaBn": "৩–৫ দিন" }
+    ],
+    "demoProducts": false
+  }
+}

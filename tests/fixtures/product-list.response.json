@@ -1,0 +1,27 @@
+{
+  "items": [
+    {
+      "id": 11,
+      "slug": "jersey-hijab-dusty-rose",
+      "name_en": "Jersey Hijab — Dusty Rose",
+      "name_bn": "জার্সি হিজাব — ডাস্টি রোজ",
+      "price": 390,
+      "sale_price": null,
+      "images": ["/assets/ph/jersey-hijab-dusty-rose-1.svg", "/assets/ph/jersey-hijab-dusty-rose-2.svg"],
+      "rating_avg": 0,
+      "rating_count": 0,
+      "sold_count": 120,
+      "is_featured": 0,
+      "created_at": "2026-09-04T20:02:49.971Z",
+      "category_id": 9,
+      "stock": 27,
+      "color_hexes": ["#C99A9A", "#D9C7AE", "#151515"],
+      "sizes": ["Free Size"],
+      "discount_percent": 0,
+      "in_stock": true
+    }
+  ],
+  "total": 14,
+  "page": 1,
+  "pages": 7
+}

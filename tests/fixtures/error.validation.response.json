@@ -1,0 +1,8 @@
+{
+  "code": "validation",
+  "en": "Please fix the highlighted fields.",
+  "bn": "চিহ্নিত ঘরগুলো ঠিক করুন।",
+  "fields": [
+    { "field": "customer.phone", "en": "Enter a valid Bangladeshi mobile number (01XXXXXXXXX) / সঠিক মোবাইল নম্বর দিন", "bn": "Enter a valid Bangladeshi mobile number (01XXXXXXXXX) / সঠিক মোবাইল নম্বর দিন" }
+  ]
+}

@@ -1,0 +1,37 @@
+{
+  "name": "lks-attire",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Lk's Attire \u2014 brand-configurable e-commerce storefront + admin on one Cloudflare Worker (Hono + D1 + KV + R2)",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "brand": "node scripts/build-brand.mjs",
+    "build": "node scripts/build-brand.mjs",
+    "typecheck": "node scripts/build-brand.mjs && tsc --noEmit",
+    "dev": "npm run build && wrangler dev",
+    "db:migrate:local": "wrangler d1 migrations apply DB --local",
+    "db:migrate:remote": "wrangler d1 migrations apply DB --remote",
+    "db:seed:local": "npm run build && wrangler d1 execute DB --local --file=./dist-seed/seed.sql",
+    "db:seed:remote": "npm run build && wrangler d1 execute DB --remote --file=./dist-seed/seed.sql",
+    "admin:create": "node scripts/create-admin.mjs",
+    "test": "node scripts/build-brand.mjs && vitest run",
+    "test:e2e": "playwright test",
+    "deploy": "npm run build && wrangler deploy"
+  },
+  "dependencies": {
+    "hono": "^4.13.9",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "^0.22.0",
+    "@cloudflare/workers-types": "^5.20260924.1",
+    "@playwright/test": "^1.63.0",
+    "typescript": "^7.0.2",
+    "vite": "^7.1.0",
+    "vitest": "~4.1.11",
+    "wrangler": "^4.138.0"
+  }
+}

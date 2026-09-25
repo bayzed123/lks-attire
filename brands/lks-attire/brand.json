@@ -1,0 +1,555 @@
+{
+  "$schema": "../brand.schema.json",
+  "id": "lks-attire",
+  "name": {
+    "en": "Lk's Attire",
+    "bn": "এলকে'স অ্যাটায়ার"
+  },
+  "shortName": "Lk's",
+  "tagline": {
+    "en": "Style With A Signature",
+    "bn": "স্টাইল, নিজস্ব সিগনেচারে"
+  },
+  "description": {
+    "en": "Lk's Attire — party wear, organza three-pieces, kurtis, sarees and festive outfits for women. Hand-picked in Tangail, delivered across Bangladesh with Cash on Delivery.",
+    "bn": "এলকে'স অ্যাটায়ার — নারীদের পার্টি ওয়্যার, অর্গানজা থ্রি-পিস, কুর্তি, শাড়ি ও উৎসবের পোশাক। টাঙ্গাইল থেকে বাছাই করা, সারা বাংলাদেশে ক্যাশ অন ডেলিভারি।"
+  },
+  "logo": {
+    "concept": "Official logo: gold serif 'LK' monogram with a leaf sprig and butterfly, 'LK'S ATTIRE' in white serif caps, gold script tagline 'Style With A Signature', a woman in a draped saree, inside a thin white circle on black.",
+    "wordmark": "LK'S ATTIRE",
+    "monogram": "LK",
+    "image": "/assets/brand/logo-160.webp",
+    "imageLarge": "/assets/brand/logo.webp",
+    "icon": "/assets/brand/logo-512.png",
+    "ogImage": "/assets/brand/og-cover.jpg"
+  },
+  "orderPrefix": "LKS",
+  "domain": "lksattire.com",
+  "locale": {
+    "default": "bn",
+    "supported": [
+      "bn",
+      "en"
+    ],
+    "currency": "BDT",
+    "currencySymbol": "৳"
+  },
+  "palettes": {
+    "signature-noir": {
+      "label": "Signature Noir — black, gold & rani pink (default, from the official logo & shoots)",
+      "bg": "#FBF7F2",
+      "surface": "#FFFFFF",
+      "surfaceAlt": "#F5EDE7",
+      "ink": "#141013",
+      "inkSoft": "#6A5F63",
+      "primary": "#141013",
+      "primaryInk": "#FFFFFF",
+      "accent": "#D6246E",
+      "accentSoft": "#FBE1EC",
+      "gold": "#D4AF45",
+      "line": "#EADFD7",
+      "success": "#2F7A55",
+      "danger": "#B3261E",
+      "motifA": "#141013",
+      "motifB": "#D4AF45",
+      "motifC": "#D6246E"
+    },
+    "blush-loom": {
+      "label": "Blush Loom — everyday elegance (default)",
+      "bg": "#FBF7F2",
+      "surface": "#FFFFFF",
+      "surfaceAlt": "#F6EDE8",
+      "ink": "#2B2426",
+      "inkSoft": "#6E6264",
+      "primary": "#8E3B52",
+      "primaryInk": "#FFFFFF",
+      "accent": "#B76E79",
+      "accentSoft": "#F3D9D4",
+      "gold": "#C79A5B",
+      "line": "#E8DCD6",
+      "success": "#2F7A55",
+      "danger": "#B3261E",
+      "motifA": "#8E3B52",
+      "motifB": "#C79A5B",
+      "motifC": "#F3D9D4"
+    },
+    "festive-maroon": {
+      "label": "Festive Maroon — Eid, Puja & wedding season",
+      "bg": "#FFF8EC",
+      "surface": "#FFFFFF",
+      "surfaceAlt": "#F7EBD6",
+      "ink": "#2A1216",
+      "inkSoft": "#6B4F45",
+      "primary": "#6B1E2E",
+      "primaryInk": "#FFF8EC",
+      "accent": "#C9A24A",
+      "accentSoft": "#F4E5C2",
+      "gold": "#C9A24A",
+      "line": "#EADBC0",
+      "success": "#2F7A55",
+      "danger": "#B3261E",
+      "motifA": "#6B1E2E",
+      "motifB": "#C9A24A",
+      "motifC": "#F4E5C2"
+    },
+    "jamdani-sage": {
+      "label": "Jamdani Sage — calm, natural, cotton-forward",
+      "bg": "#F7F5EF",
+      "surface": "#FFFFFF",
+      "surfaceAlt": "#ECEDE3",
+      "ink": "#23261F",
+      "inkSoft": "#5E6357",
+      "primary": "#4F5D45",
+      "primaryInk": "#FFFFFF",
+      "accent": "#C06C4B",
+      "accentSoft": "#EFD9CC",
+      "gold": "#B89456",
+      "line": "#DEDFD3",
+      "success": "#2F7A55",
+      "danger": "#B3261E",
+      "motifA": "#4F5D45",
+      "motifB": "#C06C4B",
+      "motifC": "#EFD9CC"
+    }
+  },
+  "activePalette": "signature-noir",
+  "design": {
+    "heroStyle": "noir",
+    "motif": "taant",
+    "cardStyle": "arch",
+    "radius": "16px",
+    "buttonShape": "pill",
+    "density": "comfortable",
+    "fonts": {
+      "display": "Cormorant Garamond",
+      "displayWeights": "600",
+      "body": "Hind Siliguri",
+      "bodyWeights": "400;600",
+      "script": "Great Vibes",
+      "googleFontsQuery": "family=Cormorant+Garamond:wght@600&family=Hind+Siliguri:wght@400;600&family=Great+Vibes"
+    }
+  },
+  "admin": {
+    "theme": "soft-neumorph",
+    "primary": "#6D3FC0",
+    "primaryDeep": "#3E1F7A",
+    "pink": "#E0337F",
+    "bg": "#F1EDF8"
+  },
+  "contact": {
+    "phone": "+8801700000000",
+    "whatsapp": "8801700000000",
+    "email": "hello@lksattire.com",
+    "hours": {
+      "en": "Sat–Thu, 10am–9pm",
+      "bn": "শনি–বৃহস্পতি, সকাল ১০টা–রাত ৯টা"
+    }
+  },
+  "location": {
+    "street": {
+      "en": "Akurtakur Para",
+      "bn": "আকুরটাকুর পাড়া"
+    },
+    "city": {
+      "en": "Tangail",
+      "bn": "টাঙ্গাইল"
+    },
+    "region": {
+      "en": "Dhaka Division",
+      "bn": "ঢাকা বিভাগ"
+    },
+    "postalCode": "1900",
+    "country": "BD",
+    "lat": 24.2513,
+    "lng": 89.9167,
+    "mapEmbedUrl": "https://www.google.com/maps?q=Akurtakur+Para,+Tangail&output=embed"
+  },
+  "social": {
+    "facebook": "https://www.facebook.com/profile.php?id=61579789955802",
+    "instagram": "",
+    "tiktok": "",
+    "youtube": ""
+  },
+  "seed": {
+    "categories": [
+      {
+        "slug": "saree",
+        "en": "Saree",
+        "bn": "শাড়ি",
+        "children": [
+          {
+            "slug": "tangail-saree",
+            "en": "Tangail Saree",
+            "bn": "টাঙ্গাইল শাড়ি"
+          },
+          {
+            "slug": "cotton-saree",
+            "en": "Cotton Saree",
+            "bn": "সুতি শাড়ি"
+          },
+          {
+            "slug": "jamdani-saree",
+            "en": "Jamdani",
+            "bn": "জামদানি"
+          },
+          {
+            "slug": "silk-saree",
+            "en": "Silk Saree",
+            "bn": "সিল্ক শাড়ি"
+          }
+        ]
+      },
+      {
+        "slug": "three-piece",
+        "en": "Three-Piece / Salwar Kameez",
+        "bn": "থ্রি-পিস / সালোয়ার কামিজ",
+        "children": [
+          {
+            "slug": "organza-three-piece",
+            "en": "Organza Party Three-Piece",
+            "bn": "অর্গানজা পার্টি থ্রি-পিস"
+          },
+          {
+            "slug": "stitched-three-piece",
+            "en": "Stitched",
+            "bn": "সেলাই করা"
+          },
+          {
+            "slug": "unstitched-three-piece",
+            "en": "Unstitched",
+            "bn": "আনস্টিচড"
+          }
+        ]
+      },
+      {
+        "slug": "kurti",
+        "en": "Kurti & Tunic",
+        "bn": "কুর্তি ও টিউনিক"
+      },
+      {
+        "slug": "western",
+        "en": "Western Wear",
+        "bn": "ওয়েস্টার্ন"
+      },
+      {
+        "slug": "abaya-hijab",
+        "en": "Abaya & Hijab",
+        "bn": "আবায়া ও হিজাব"
+      },
+      {
+        "slug": "festive",
+        "en": "Party & Festive",
+        "bn": "পার্টি ও উৎসব"
+      },
+      {
+        "slug": "accessories",
+        "en": "Accessories",
+        "bn": "এক্সেসরিজ"
+      },
+      {
+        "slug": "footwear",
+        "en": "Footwear",
+        "bn": "জুতা"
+      }
+    ],
+    "deliveryZones": [
+      {
+        "code": "tangail_town",
+        "en": "Inside Tangail town",
+        "bn": "টাঙ্গাইল শহরের ভেতরে",
+        "fee": 50,
+        "freeOver": 3000,
+        "upazilaIds": [
+          342
+        ],
+        "districtIds": [],
+        "etaEn": "Same or next day",
+        "etaBn": "একই দিন বা পরের দিন"
+      },
+      {
+        "code": "tangail_outer",
+        "en": "Tangail (outside town)",
+        "bn": "টাঙ্গাইল (শহরের বাইরে)",
+        "fee": 80,
+        "freeOver": 4000,
+        "upazilaIds": [],
+        "districtIds": [
+          44
+        ],
+        "etaEn": "1–2 days",
+        "etaBn": "১–২ দিন"
+      },
+      {
+        "code": "dhaka",
+        "en": "Dhaka",
+        "bn": "ঢাকা",
+        "fee": 100,
+        "freeOver": 5000,
+        "upazilaIds": [],
+        "districtIds": [
+          47
+        ],
+        "etaEn": "2–3 days",
+        "etaBn": "২–৩ দিন"
+      },
+      {
+        "code": "rest_bd",
+        "en": "Rest of Bangladesh",
+        "bn": "বাংলাদেশের অন্যান্য এলাকা",
+        "fee": 130,
+        "freeOver": 6000,
+        "upazilaIds": [],
+        "districtIds": [],
+        "isDefault": true,
+        "etaEn": "3–5 days",
+        "etaBn": "৩–৫ দিন"
+      }
+    ],
+    "demoProducts": true,
+    "products": [
+      {
+        "slug": "ruby-organza-three-piece",
+        "sku": "LK-OR-01",
+        "en": "Ruby Pink Organza Three-Piece",
+        "bn": "রুবি পিংক অর্গানজা থ্রি-পিস",
+        "cat": "organza-three-piece",
+        "price": 4650,
+        "sale": 4250,
+        "sizes": [
+          "S",
+          "M",
+          "L",
+          "XL",
+          "XXL"
+        ],
+        "colors": [
+          [
+            "Ruby Pink",
+            "#E0115F"
+          ]
+        ],
+        "images": [
+          "/assets/brand/ruby-organza-2.webp",
+          "/assets/brand/ruby-organza-1.webp"
+        ],
+        "featured": 1,
+        "sold": 58,
+        "tags": "organza,party,eid,beadwork",
+        "fabricEn": "Organza kameez with black bead & thread embroidery, silk palazzo, organza dupatta with black border",
+        "fabricBn": "কালো পুঁতি ও সুতার কাজের অর্গানজা কামিজ, সিল্ক পালাজো, কালো পাড়ের অর্গানজা ওড়না",
+        "descEn": "A statement ruby-pink organza set with a hand-finished black motif at the neckline, scattered beadwork and tasselled hems. Made for Eid dinners, weddings and parties.",
+        "descBn": "গলায় হাতে করা কালো মোটিফ, ছড়ানো পুঁতির কাজ আর ঝালর দেওয়া রুবি পিংক অর্গানজা সেট। ঈদ, বিয়ে ও পার্টির জন্য।"
+      },
+      {
+        "slug": "blush-organza-three-piece",
+        "sku": "LK-OR-02",
+        "en": "Blush Pink Organza Three-Piece with Pearl Details",
+        "bn": "পার্ল ডিটেইলস ব্লাশ পিংক অর্গানজা থ্রি-পিস",
+        "cat": "organza-three-piece",
+        "price": 4450,
+        "sizes": [
+          "S",
+          "M",
+          "L",
+          "XL",
+          "XXL"
+        ],
+        "colors": [
+          [
+            "Blush Pink",
+            "#F2A7B5"
+          ]
+        ],
+        "images": [
+          "/assets/brand/blush-organza-1.webp"
+        ],
+        "featured": 1,
+        "sold": 41,
+        "tags": "organza,pearl,pastel,party",
+        "fabricEn": "Organza kameez with pearl-lace neckline and floral hem embroidery, white trouser, sheer organza dupatta",
+        "fabricBn": "পার্ল লেসের গলা ও ফুলেল এমব্রয়ডারির অর্গানজা কামিজ, সাদা ট্রাউজার, স্বচ্ছ অর্গানজা ওড়না",
+        "descEn": "Soft blush organza with delicate pearl lace, tassel cuffs and a floral appliqué hem — elegant for daytime events.",
+        "descBn": "নরম ব্লাশ অর্গানজায় সূক্ষ্ম পার্ল লেস, ঝালর দেওয়া হাতা আর ফুলেল অ্যাপ্লিক — দিনের অনুষ্ঠানের জন্য মার্জিত।"
+      },
+      {
+        "slug": "lime-organza-three-piece",
+        "sku": "LK-OR-03",
+        "en": "Lime Yellow Organza Three-Piece",
+        "bn": "লাইম ইয়েলো অর্গানজা থ্রি-পিস",
+        "cat": "organza-three-piece",
+        "price": 4450,
+        "sale": 3990,
+        "sizes": [
+          "S",
+          "M",
+          "L",
+          "XL",
+          "XXL"
+        ],
+        "colors": [
+          [
+            "Lime Yellow",
+            "#D4D40F"
+          ]
+        ],
+        "images": [
+          "/assets/brand/lime-organza-1.webp"
+        ],
+        "featured": 1,
+        "sold": 36,
+        "tags": "organza,haldi,yellow,festive",
+        "fabricEn": "Organza kameez with pearl neckline and white floral embroidery, organza dupatta",
+        "fabricBn": "পার্ল গলা ও সাদা ফুলেল এমব্রয়ডারির অর্গানজা কামিজ, অর্গানজা ওড়না",
+        "descEn": "Bright lime organza with a pearl-trimmed keyhole neckline and white floral work — perfect for haldi and Boishakh.",
+        "descBn": "পার্ল ট্রিমের কিহোল গলা ও সাদা ফুলের কাজের উজ্জ্বল লাইম অর্গানজা — হলুদ ও বৈশাখের জন্য পারফেক্ট।"
+      },
+      {
+        "slug": "maroon-embroidered-kurti",
+        "sku": "LK-KU-01",
+        "en": "Maroon Silk Kurti with Floral Stone Work",
+        "bn": "ফ্লোরাল স্টোন ওয়ার্ক মেরুন সিল্ক কুর্তি",
+        "cat": "kurti",
+        "price": 2850,
+        "sizes": [
+          "M",
+          "L",
+          "XL",
+          "XXL"
+        ],
+        "colors": [
+          [
+            "Maroon",
+            "#8A1538"
+          ]
+        ],
+        "images": [
+          "/assets/brand/maroon-kurti-1.webp"
+        ],
+        "sold": 27,
+        "tags": "kurti,silk,stonework,party",
+        "fabricEn": "Soft silk with stone-set floral hem and bell sleeves",
+        "fabricBn": "স্টোন বসানো ফুলেল পাড় ও বেল হাতার নরম সিল্ক",
+        "descEn": "A rich maroon kurti with sparkling floral stonework on the hem and sleeves. Pair with palazzo or jeans.",
+        "descBn": "পাড় ও হাতায় ঝলমলে ফুলেল স্টোনের কাজের গাঢ় মেরুন কুর্তি। পালাজো বা জিন্সের সাথে পরুন।"
+      },
+      {
+        "slug": "red-organza-three-piece",
+        "sku": "LK-OR-04",
+        "en": "Red Organza Three-Piece with Black Appliqué",
+        "bn": "ব্ল্যাক অ্যাপ্লিক রেড অর্গানজা থ্রি-পিস",
+        "cat": "organza-three-piece",
+        "price": 4250,
+        "sizes": [
+          "S",
+          "M",
+          "L",
+          "XL",
+          "XXL"
+        ],
+        "colors": [
+          [
+            "Red",
+            "#D7141E"
+          ]
+        ],
+        "images": [
+          "/assets/brand/red-organza-1.webp"
+        ],
+        "featured": 1,
+        "sold": 33,
+        "tags": "organza,red,party,wedding",
+        "fabricEn": "Organza kameez with covered-button placket and black appliqué, matching dupatta",
+        "fabricBn": "কভার বোতাম ও কালো অ্যাপ্লিকের অর্গানজা কামিজ, ম্যাচিং ওড়না",
+        "descEn": "Classic red organza with a pearl-button placket and bold black appliqué flowers — a wedding-season favourite.",
+        "descBn": "পার্ল বোতাম ও সাহসী কালো অ্যাপ্লিক ফুলের ক্লাসিক লাল অর্গানজা — বিয়ের মৌসুমের প্রিয়।"
+      },
+      {
+        "slug": "yellow-gown-embroidered-jacket",
+        "sku": "LK-PW-01",
+        "en": "Yellow Georgette Gown with Embroidered Black Jacket",
+        "bn": "এমব্রয়ডারি কালো জ্যাকেটসহ হলুদ জর্জেট গাউন",
+        "cat": "festive",
+        "price": 5250,
+        "sale": 4790,
+        "sizes": [
+          "M",
+          "L",
+          "XL",
+          "XXL"
+        ],
+        "colors": [
+          [
+            "Yellow & Black",
+            "#F2D500"
+          ]
+        ],
+        "images": [
+          "/assets/brand/yellow-jacket-gown-1.webp"
+        ],
+        "featured": 1,
+        "sold": 19,
+        "tags": "gown,jacket,party,festive",
+        "fabricEn": "Flowing georgette gown with a black jacket in silver-grey floral zari embroidery",
+        "fabricBn": "রুপালি ফুলেল জরি এমব্রয়ডারির কালো জ্যাকেটসহ ঘেরওয়ালা জর্জেট গাউন",
+        "descEn": "A two-piece party look: a full-flare yellow gown with a detachable black embroidered jacket and belt.",
+        "descBn": "দুই পিসের পার্টি লুক: ফুল-ফ্লেয়ার হলুদ গাউন, সাথে খোলা যায় এমন কালো এমব্রয়ডারি জ্যাকেট ও বেল্ট।"
+      }
+    ],
+    "banners": [
+      {
+        "placement": "hero",
+        "en": "Party wear, made to be <em>noticed</em>",
+        "bn": "নজরকাড়া <em>পার্টি ওয়্যার</em>",
+        "subEn": "Organza party three-pieces, kurtis and festive wear — hand-picked in Tangail.",
+        "subBn": "অর্গানজা পার্টি থ্রি-পিস, কুর্তি ও উৎসবের পোশাক — টাঙ্গাইল থেকে বাছাই করা।",
+        "ctaEn": "Shop the collection",
+        "ctaBn": "কালেকশন দেখুন",
+        "link": "/shop/three-piece",
+        "image": "/assets/brand/cover.webp"
+      },
+      {
+        "placement": "hero",
+        "en": "The Organza Edit",
+        "bn": "অর্গানজা কালেকশন",
+        "subEn": "Ruby, blush and lime — beadwork, pearls and tassels.",
+        "subBn": "রুবি, ব্লাশ আর লাইম — পুঁতি, পার্ল ও ঝালরের কাজ।",
+        "ctaEn": "Explore organza",
+        "ctaBn": "অর্গানজা দেখুন",
+        "link": "/shop/organza-three-piece",
+        "image": "/assets/brand/ruby-organza-2.webp"
+      },
+      {
+        "placement": "festive",
+        "en": "Available Now — Party & Festive",
+        "bn": "এখন পাওয়া যাচ্ছে — পার্টি ও উৎসব",
+        "subEn": "New stonework kurtis, organza sets and jacket gowns. Cash on Delivery all over Bangladesh.",
+        "subBn": "নতুন স্টোন ওয়ার্ক কুর্তি, অর্গানজা সেট ও জ্যাকেট গাউন। সারা বাংলাদেশে ক্যাশ অন ডেলিভারি।",
+        "ctaEn": "Shop now",
+        "ctaBn": "এখনই কিনুন",
+        "link": "/shop/festive",
+        "image": "/assets/brand/available-now.webp"
+      },
+      {
+        "placement": "promo",
+        "en": "Free delivery inside Tangail town on orders over ৳3,000",
+        "bn": "টাঙ্গাইল শহরে ৳৩,০০০ এর বেশি অর্ডারে ফ্রি ডেলিভারি",
+        "subEn": "Use code LK10 for 10% off your first order",
+        "subBn": "প্রথম অর্ডারে ১০% ছাড়ের জন্য কোড LK10 ব্যবহার করুন",
+        "ctaEn": "",
+        "ctaBn": "",
+        "link": "/shop",
+        "image": ""
+      }
+    ],
+    "coupons": [
+      {
+        "code": "LK10",
+        "description": "10% off (max ৳500)",
+        "type": "percent",
+        "value": 10,
+        "min_order": 1500,
+        "max_discount": 500
+      }
+    ]
+  }
+}
