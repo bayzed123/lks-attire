@@ -136,9 +136,15 @@ async function checkoutPage(main, { navigate, query }) {
     </form></div>`);
 
   const form = $("#co");
+  // Address changes fire quotes in quick succession; only the latest one may update the page,
+  // or a slow earlier reply (e.g. for the division alone) would show the wrong zone and fee.
+  let latest = 0;
   const refresh = async () => {
+    const mine = ++latest;
     try {
-      quote = await quoteCart(address, cart.coupon());
+      const q = await quoteCart(address, cart.coupon());
+      if (mine !== latest) return;
+      quote = q;
       reconcile(quote);
       $("#totals").innerHTML = String(totalsHtml(quote, { showDelivery: Boolean(address) }));
       if (address) {
@@ -148,6 +154,7 @@ async function checkoutPage(main, { navigate, query }) {
       }
       renderMfs();
     } catch (e) {
+      if (mine !== latest) return;
       if (e.data?.code === "coupon") { cart.setCoupon(""); $("#cc2").value = ""; toast(errMsg(e), "error"); return refresh(); }
       $("#totals").innerHTML = String(html`<p class="error-box">${errMsg(e)}</p>`);
     }
