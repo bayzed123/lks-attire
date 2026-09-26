@@ -30,6 +30,10 @@ test("guest can browse, filter, add to cart and check out with Cash on Delivery"
   await expect(page.locator("#zone")).toContainText("Inside Tangail town");
   await page.locator('textarea[name="area"]').fill("Akurtakur Para, Road 3, House 12");
   await expect(page.locator('input[name="paymentMethod"][value="COD"]')).toBeChecked();
+  // The Send Money steps name the wallet the customer picked.
+  await page.locator('input[name="paymentMethod"][value="bKash"]').check({ force: true });
+  await expect(page.locator("#mfs")).toContainText("Open your bKash app");
+  await page.locator('input[name="paymentMethod"][value="COD"]').check({ force: true });
   await page.getByRole("button", { name: "Place order" }).click();
 
   await expect(page.getByRole("heading", { name: /Thank you/ })).toBeVisible({ timeout: 15_000 });

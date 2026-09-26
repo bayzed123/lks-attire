@@ -171,7 +171,7 @@ async function checkoutPage(main, { navigate, query }) {
     if (["bKash", "Nagad", "Rocket"].includes(m) && info.mode === "manual") {
       const amount = quote ? money(address ? quote.total : quote.subtotal - quote.discount) : "";
       box.innerHTML = String(html`<div class="mfs-box"><ol>
-        <li>${t("mfsStep1", { method: t(`pay${m}`) })}</li>
+        <li>${t("mfsStep1", { method: t({ bKash: "payBkash", Nagad: "payNagad", Rocket: "payRocket" }[m]) })}</li>
         <li>${t("mfsStep2", { amount, number: info.number, type: info.accountType })}</li>
         <li>${t("mfsStep3")}</li></ol>
         <label class="field" style="margin:0"><span>${t("trxId")} *</span><input class="input" name="paymentRef" required maxlength="60" autocomplete="off" style="text-transform:uppercase"></label></div>`);
