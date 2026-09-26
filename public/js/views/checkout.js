@@ -136,9 +136,15 @@ async function checkoutPage(main, { navigate, query }) {
     </form></div>`);
 
   const form = $("#co");
+  // Address changes fire quotes in quick succession; only the latest one may update the page,
+  // or a slow earlier reply (e.g. for the division alone) would show the wrong zone and fee.
+  let latest = 0;
   const refresh = async () => {
+    const mine = ++latest;
     try {
-      quote = await quoteCart(address, cart.coupon());
+      const q = await quoteCart(address, cart.coupon());
+      if (mine !== latest) return;
+      quote = q;
       reconcile(quote);
       $("#totals").innerHTML = String(totalsHtml(quote, { showDelivery: Boolean(address) }));
       if (address) {
@@ -148,6 +154,7 @@ async function checkoutPage(main, { navigate, query }) {
       }
       renderMfs();
     } catch (e) {
+      if (mine !== latest) return;
       if (e.data?.code === "coupon") { cart.setCoupon(""); $("#cc2").value = ""; toast(errMsg(e), "error"); return refresh(); }
       $("#totals").innerHTML = String(html`<p class="error-box">${errMsg(e)}</p>`);
     }
@@ -171,7 +178,7 @@ async function checkoutPage(main, { navigate, query }) {
     if (["bKash", "Nagad", "Rocket"].includes(m) && info.mode === "manual") {
       const amount = quote ? money(address ? quote.total : quote.subtotal - quote.discount) : "";
       box.innerHTML = String(html`<div class="mfs-box"><ol>
-        <li>${t("mfsStep1", { method: t(`pay${m}`) })}</li>
+        <li>${t("mfsStep1", { method: t({ bKash: "payBkash", Nagad: "payNagad", Rocket: "payRocket" }[m]) })}</li>
         <li>${t("mfsStep2", { amount, number: info.number, type: info.accountType })}</li>
         <li>${t("mfsStep3")}</li></ol>
         <label class="field" style="margin:0"><span>${t("trxId")} *</span><input class="input" name="paymentRef" required maxlength="60" autocomplete="off" style="text-transform:uppercase"></label></div>`);

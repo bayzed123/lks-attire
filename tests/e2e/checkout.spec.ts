@@ -30,6 +30,10 @@ test("guest can browse, filter, add to cart and check out with Cash on Delivery"
   await expect(page.locator("#zone")).toContainText("Inside Tangail town");
   await page.locator('textarea[name="area"]').fill("Akurtakur Para, Road 3, House 12");
   await expect(page.locator('input[name="paymentMethod"][value="COD"]')).toBeChecked();
+  // The Send Money steps name the wallet the customer picked.
+  await page.locator('input[name="paymentMethod"][value="bKash"]').check({ force: true });
+  await expect(page.locator("#mfs")).toContainText("Open your bKash app");
+  await page.locator('input[name="paymentMethod"][value="COD"]').check({ force: true });
   await page.getByRole("button", { name: "Place order" }).click();
 
   await expect(page.getByRole("heading", { name: /Thank you/ })).toBeVisible({ timeout: 15_000 });
@@ -90,4 +94,27 @@ test("typing a postcode auto-selects Division, District and Upazila at checkout"
   await page.locator("#area-results button", { hasText: "Tangail" }).first().click();
   await expect(page.locator('select[name="upazila_id"] option:checked')).toHaveText("Mirzapur");
   await expect(page.locator("#zone")).toContainText("Tangail (outside town)");
+});
+
+test("a slow earlier delivery quote never overwrites the zone for the final address", async ({ page }) => {
+  // Each address change asks for a new quote. Hold the earlier ones back so they
+  // arrive after the last one — the zone shown must still be the final address's.
+  let n = 0;
+  await page.route("**/api/cart/quote", async (route) => {
+    const delay = n++ < 3 ? 1500 : 0;
+    await new Promise((r) => setTimeout(r, delay));
+    await route.continue();
+  });
+  await page.goto("/product/ruby-organza-three-piece");
+  await page.locator(".colour-opts button").first().click();
+  await page.locator(".size-opts button:not([disabled])").first().click();
+  await page.locator("#add").click();
+  await page.getByRole("link", { name: "Proceed to checkout" }).click();
+  await expect(page.getByRole("heading", { name: "Checkout" })).toBeVisible();
+  n = 0;
+  await page.locator('select[name="division_id"]').selectOption({ label: "Dhaka" });
+  await page.locator('select[name="district_id"]').selectOption({ label: "Tangail" });
+  await page.locator('select[name="upazila_id"]').selectOption({ label: "Tangail Sadar" });
+  await page.waitForTimeout(2500);
+  await expect(page.locator("#zone")).toContainText("Inside Tangail town");
 });
